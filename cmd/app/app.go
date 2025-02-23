@@ -1,13 +1,20 @@
-package main
+package app
 
 import (
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
+	"github.com/kudzaitsapo/fileflow-server/internal/auth"
 	"github.com/kudzaitsapo/fileflow-server/internal/cache"
 	"github.com/kudzaitsapo/fileflow-server/internal/config"
 	"github.com/kudzaitsapo/fileflow-server/internal/store"
+)
+
+var (
+	currentApplication *Application
+	mu sync.Mutex
 )
 
 
@@ -15,10 +22,10 @@ type Application struct {
 	mux *http.ServeMux
 	middleware []func(http.Handler) http.Handler
 	AppConfig config.ApplicationConfig
-	store *store.Storage
-	cache *cache.Storage
+	Authenticator auth.Authenticator
+	Store *store.Storage
+	Cache *cache.Storage
 }
-
 
 func CreateApplication(config config.ApplicationConfig) *Application {
 	return &Application{
@@ -28,12 +35,29 @@ func CreateApplication(config config.ApplicationConfig) *Application {
 	}
 }
 
-func (app *Application) SetStore(store *store.Storage) {
-	app.store = store
+
+func GetCurrentApplication() *Application {
+	mu.Lock()
+	defer mu.Unlock()
+	return currentApplication
 }
 
-func (app *Application) SetCache(cache *cache.Storage) {
-	app.cache = cache
+func SetCurrentApplication(app *Application) {
+	mu.Lock()
+	defer mu.Unlock()
+	currentApplication = app
+}
+
+func (a *Application) SetAuthenticator(auth auth.Authenticator) {
+	a.Authenticator = auth
+}
+
+func (a *Application) SetStore(store *store.Storage) {
+	a.Store = store
+}
+
+func (a *Application) SetCache(cache *cache.Storage) {
+	a.Cache = cache
 }
 
 func (app *Application) Use(middleware func(http.Handler) http.Handler) {

@@ -8,7 +8,8 @@ import (
 
 type Route struct {
 	Pattern string
-	Handler http.HandlerFunc
+	Handler http.Handler
+	RequiresAuth bool
 }
 
 func CreateRoutes() []Route {
@@ -16,9 +17,13 @@ func CreateRoutes() []Route {
 
 	routes = append(routes, Route{
 		Pattern: "GET /v1/health-check",
-		Handler: handlers.HandleHealthCheck,
-
+		Handler: http.HandlerFunc(handlers.HandleHealthCheck),
+		RequiresAuth: true,
+	},
+	Route{
+		Pattern: "POST /v1/auth/login",
+		Handler: http.HandlerFunc(handlers.HandleAuthentication),
+		RequiresAuth: false,
 	})
-
 	return routes
 }

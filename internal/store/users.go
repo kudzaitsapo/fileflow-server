@@ -52,7 +52,8 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 								 password, 
 								 first_name, 
 								 last_name, 
-								 role_id) VALUES ($1, $2, $3, $4, $5) RETURNING id, created_at`
+								 role_id,
+								 is_active) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -71,6 +72,7 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 		user.FirstName,
 		user.LastName,
 		user.RoleID,
+		user.IsActive,
 	).Scan(
 		&user.ID,
 		&user.CreatedAt,
@@ -116,6 +118,41 @@ func (s *UserStore) GetById(ctx context.Context, id int64) (*User, error) {
 	return user, nil
 }
 
+func (s *UserStore) GetAll(ctx context.Context, limit int64, offset int64) ([]*User, error) {
+	query := `SELECT id, email, first_name, last_name, created_at, is_active, role_id FROM users LIMIT $1 OFFSET $2`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	rows, err := s.db.QueryContext(ctx, query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := make([]*User, 0)
+	for rows.Next() {
+		user := &User{}
+		err := rows.Scan(
+			&user.ID,
+			&user.Email,
+			&user.FirstName,
+			&user.LastName,
+			&user.CreatedAt,
+			&user.IsActive,
+			&user.RoleID,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
+	}
+
+	return users, nil
+}
+
 func (s *UserStore) Delete(ctx context.Context, userID int64) error {
 	return withTx(s.db, ctx, func(tx *sql.Tx) error {
 		if err := s.delete(ctx, tx, userID); err != nil {
@@ -143,12 +180,13 @@ func (s *UserStore) delete(ctx context.Context, tx *sql.Tx, id int64) error {
 
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
-		SELECT id, email, password, created_at FROM users
-		WHERE email = $1 AND is_active = true
+		SELECT id, email, password, created_at, is_active, role_id FROM users
+		WHERE email = $1
 	`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
+
 
 	user := &User{}
 	err := s.db.QueryRowContext(ctx, query, email).Scan(
@@ -156,7 +194,10 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error)
 		&user.Email,
 		&user.Password.hash,
 		&user.CreatedAt,
+		&user.IsActive,
+		&user.RoleID,
 	)
+
 	if err != nil {
 		switch err {
 		case sql.ErrNoRows:

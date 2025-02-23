@@ -4,6 +4,8 @@ import (
 	"log"
 
 	server "github.com/kudzaitsapo/fileflow-server"
+	"github.com/kudzaitsapo/fileflow-server/cmd/app"
+	"github.com/kudzaitsapo/fileflow-server/internal/auth"
 	"github.com/kudzaitsapo/fileflow-server/internal/cache"
 	"github.com/kudzaitsapo/fileflow-server/internal/config"
 	"github.com/kudzaitsapo/fileflow-server/internal/database"
@@ -20,7 +22,7 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	app := CreateApplication(*cfg)
+	application := app.CreateApplication(*cfg)
 
 	// Initialise the database
 	db, err := database.Initialise(&cfg.DbConfig)
@@ -39,14 +41,23 @@ func main() {
 	// Register middleware
 	middlewares := middleware.GetMiddlewares()
 	for _, middleware := range middlewares {
-		app.Use(middleware)
+		application.Use(middleware)
 	}
 
 	// Handle route registration
 	routes := routes.CreateRoutes()
 	for _, route := range routes {
-		app.Handle(route.Pattern, route.Handler)
+		handler := route.Handler
+		if route.RequiresAuth {
+			handler = middleware.AuthMiddleware(handler)
+		}
+
+		application.Handle(route.Pattern, handler)
 	}
+
+	// Handle JWT registration
+	JwtAuthenticator := auth.Initialise(cfg.Config.SecretKey)
+	application.SetAuthenticator(JwtAuthenticator)
 
 	// Run database migrations
 	if !cfg.DbConfig.SkipMigrations {
@@ -57,10 +68,10 @@ func main() {
 
 	// Set the store and cache
 	store := store.InitialiseStorage(db)
-	app.SetStore(store)
+	application.SetStore(store)
 
 	cache := cache.InitialiseStorage(db)
-	app.SetCache(cache)
+	application.SetCache(cache)
 
 
 	// Seed the database
@@ -70,9 +81,12 @@ func main() {
 		}
 	}
 
+	// Set the current application
+	app.SetCurrentApplication(application)
+
 	log.Printf("Server started on port %d", cfg.Config.Port)
 
-	if err := app.ListenAndServe(); err != nil {
+	if err := application.ListenAndServe(); err != nil {
 		log.Fatalf("error starting server: %v", err)
 	}
 

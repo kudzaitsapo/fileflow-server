@@ -24,6 +24,7 @@ type Storage struct {
 		Create(ctx context.Context, tx *sql.Tx, user *User) error
 		GetByEmail(ctx context.Context, email string) (*User, error)
 		GetById(ctx context.Context, id int64) (*User, error)
+		GetAll(ctx context.Context, limit int64, offset int64) ([]*User, error)
 	}
 }
 

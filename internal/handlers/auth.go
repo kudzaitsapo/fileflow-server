@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -58,7 +59,7 @@ func HandleAuthentication(w http.ResponseWriter, r *http.Request) {
 	}
 
 	claims := &jwt.MapClaims{
-		"sub": user.ID,
+		"sub": strconv.FormatInt(user.ID, 10),
 		"exp": time.Now().Add(time.Hour * 24).Unix(),
 		"iat": time.Now().Unix(),
 		"nbf": time.Now().Unix(),

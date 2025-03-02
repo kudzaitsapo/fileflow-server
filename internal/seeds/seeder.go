@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"log"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/kudzaitsapo/fileflow-server/internal/store"
 )
 
@@ -41,6 +43,15 @@ func generateAdminUser() (*store.User, error) {
 	return user, nil
 }
 
+func generateDefaultProject() *store.Project {
+	return &store.Project{
+		Name:        "Default Project",
+		Description: "Default project for the organisation",
+		ProjectKey: uuid.NewString(),
+		CreatedAt: time.Now().Format(time.RFC3339),
+	}
+}
+
 
 func Seed(store *store.Storage, db *sql.DB) error {
 	log.Println("[+] Seeding database ...")
@@ -58,7 +69,7 @@ func Seed(store *store.Storage, db *sql.DB) error {
 			return err
 		}
 	}
-	log.Println("[V] Roles seeded successfully")
+	log.Println("[+] Roles seeded successfully")
 
 	log.Println("[+] Seeding admin user ...")
 	adminUser, err := generateAdminUser()
@@ -72,12 +83,21 @@ func Seed(store *store.Storage, db *sql.DB) error {
 		log.Printf("[-] error seeding admin user: %v", err)
 		return err
 	}else{
-		log.Println("[V] Admin user seeded successfully")
+		log.Println("[+] Admin user seeded successfully")
 	}
+
+	log.Println("[+] Seeding default project ...")
+	defaultProject := generateDefaultProject()
+	if err := store.Projects.Create(ctx, defaultProject); err != nil {
+		_ = tx.Rollback()
+		log.Printf("[-] error seeding default project: %v", err)
+		return err
+	}
+	log.Println("[+] Default project seeded successfully")
 
 	tx.Commit()
 
-	log.Printf("[V] Database seeded successfully")
+	log.Printf("[+] Database seeded successfully")
 
 	return nil
 }

@@ -26,12 +26,27 @@ type Storage struct {
 		GetById(ctx context.Context, id int64) (*User, error)
 		GetAll(ctx context.Context, limit int64, offset int64) ([]*User, error)
 	}
+
+	Projects interface {
+		Create(ctx context.Context, project *Project) error
+		GetById(ctx context.Context, id int64) (*Project, error)
+		GetByKey(ctx context.Context, key string) (*Project, error)
+		GetAll(ctx context.Context, limit int64, offset int64) ([]*Project, error)
+	}
+
+	StoredFiles interface {
+		Create(ctx context.Context, storedFile *StoredFile) error
+		GetById(ctx context.Context, id int64) (*StoredFile, error)
+		GetAllByProjectKey(ctx context.Context, projectKey string, limit int64, offset int64) ([]*StoredFile, error)
+	}
 }
 
 func InitialiseStorage(db *sql.DB) *Storage {
 	return &Storage{
 		Roles: &RoleStore{db},
 		Users: &UserStore{db},
+		Projects: &ProjectStore{db},
+		StoredFiles: &StoredFileStore{db},
 	}
 }
 

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 )
 
 
@@ -14,6 +15,7 @@ type StoredFile struct {
 	Folder   string `json:"folder"`
 	SavedAs  string `json:"saved_as"`
 	OriginalExtension string `json:"original_extension"`
+	OriginalFileName string `json:"original_file_name"`
 	UploadedAt string `json:"uploaded_at"`
 	Project  Project `json:"project"`
 	ProjectID int64 `json:"project_id"`
@@ -34,9 +36,10 @@ func (s *StoredFileStore) Create(ctx context.Context, storedFile *StoredFile) er
 							folder,
 							saved_as,
 							original_extension,
+							original_file_name,
 							uploaded_at,
 							project_id,
-							icon) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`
+							icon) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, file_name`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -49,7 +52,8 @@ func (s *StoredFileStore) Create(ctx context.Context, storedFile *StoredFile) er
 		storedFile.Folder,
 		storedFile.SavedAs,
 		storedFile.OriginalExtension,
-		storedFile.UploadedAt,
+		storedFile.OriginalFileName,
+		time.Now(),
 		storedFile.ProjectID,
 		storedFile.Icon,
 	).Scan(

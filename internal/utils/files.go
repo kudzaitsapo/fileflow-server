@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"compress/flate"
 	"io"
 	"mime/multipart"
@@ -8,34 +9,47 @@ import (
 	"path/filepath"
 )
 
-func CompressFile(file multipart.File, header *multipart.FileHeader) (string, error) {
+func CompressAndSaveFile(file multipart.File, savedFileName string, saveFolder string) error {
 
-	outputFileName := "compressed_" + filepath.Base(header.Filename)
-	outFile, err := os.Create(outputFileName)
-	if err != nil {
-		return "", err
-	}
-	defer outFile.Close()
+	outputFileName := filepath.Base(savedFileName)
 
-	// Create a new deflater writer using the best compression level
-	deflater, err := flate.NewWriter(outFile, flate.BestCompression)
-	if err != nil {
-		return "", err
-	}
-	defer deflater.Close()
+	if _, dirErr := os.Stat("uploads"); os.IsNotExist(dirErr) {
+        os.Mkdir("uploads", 0755)
+    }
 
-	// Copy the contents of the uploaded file into the deflater writer,
-	// which compresses the data on the fly
-	if _, err := io.Copy(deflater, file); err != nil {
-		return "", err
+	if saveFolder != "" {
+		if _, dirErr := os.Stat(filepath.Join("uploads", saveFolder)); os.IsNotExist(dirErr) {
+			os.Mkdir(filepath.Join("uploads", saveFolder), 0755)
+		}
+		outputFileName = filepath.Join("uploads", saveFolder, outputFileName)
+	} else {
+		outputFileName = filepath.Join("uploads", outputFileName)
 	}
 
-	// Flush any remaining data from the deflater
-	if err := deflater.Flush(); err != nil {
-		return "", err
+	// Read file content (already an io.ReadCloser)
+    content, err := io.ReadAll(file)
+    if err != nil {
+        return err
+    }
+    defer file.Close() // Ensure the file is closed after reading
+
+    // Compress using deflate
+    var b bytes.Buffer
+    w, flateErr := flate.NewWriter(&b, flate.BestCompression)
+	if flateErr != nil {
+		return flateErr
 	}
 
-	return outputFileName, nil
+    if _, err := w.Write(content); err != nil {
+        return err
+    }
+    if err := w.Close(); err != nil {
+        return err
+    }
+    compressed := b.Bytes()
+
+    return os.WriteFile(outputFileName, compressed, 0644)
+
 }
 
 func DecompressFile(inputFileName string) (string, error) {
@@ -68,7 +82,7 @@ func DecompressFile(inputFileName string) (string, error) {
 }
 
 func SaveCompressedFile(file multipart.File) (*os.File, error) {
-	
+
 	return nil, nil
 }
 

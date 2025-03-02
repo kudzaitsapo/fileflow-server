@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"log"
 )
 
 type Project struct {
@@ -73,7 +74,7 @@ func (s *ProjectStore) GetById(ctx context.Context, id int64) (*Project, error) 
 }
 
 func (s *ProjectStore) GetByKey(ctx context.Context, key string) (*Project, error) {
-	query := `SELECT id, name, description, created_at, created_by_id, project_key FROM projects WHERE project_key = $1`
+	query := `SELECT id, name, description, created_at, project_key FROM projects WHERE project_key = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -88,8 +89,11 @@ func (s *ProjectStore) GetByKey(ctx context.Context, key string) (*Project, erro
 				&project.Name,
 				&project.Description,
 				&project.CreatedAt,
-				&project.CreatedById,
 				&project.ProjectKey)
+
+	if err != nil {
+		log.Printf("Error getting project by key: %v", err)
+	}
 
 	return project, err
 }

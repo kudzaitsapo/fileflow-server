@@ -29,6 +29,11 @@ func CreateRoutes() []Route {
 		Pattern: "POST /v1/projects",
 		Handler: http.HandlerFunc(handlers.HandleProjectCreation),
 		RequiresAuth: true,
+	},
+	Route{
+		Pattern: "POST /v1/files",
+		Handler: http.HandlerFunc(handlers.HandleFileUpload),
+		RequiresAuth: false,
 	})
 	return routes
 }

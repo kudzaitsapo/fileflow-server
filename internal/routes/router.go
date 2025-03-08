@@ -31,9 +31,29 @@ func CreateRoutes() []Route {
 		RequiresAuth: true,
 	},
 	Route{
+		Pattern: "GET /v1/projects",
+		Handler: http.HandlerFunc(handlers.HandleProjectList),
+		RequiresAuth: true,
+	},
+	Route{
+		Pattern: "GET /v1/projects/{id}/files",
+		Handler: http.HandlerFunc(handlers.HandleFilesList),
+		RequiresAuth: true,
+	},
+	Route{
 		Pattern: "POST /v1/files",
 		Handler: http.HandlerFunc(handlers.HandleFileUpload),
 		RequiresAuth: false,
+	},
+	Route{
+		Pattern: "GET /v1/files/{id}/download",
+		Handler: http.HandlerFunc(handlers.HandleFileDownload),
+		RequiresAuth: false,
+	},
+	Route{
+		Pattern: "GET /v1/files/{id}/info",
+		Handler: http.HandlerFunc(handlers.HandleFileInfo),
+		RequiresAuth: true,
 	})
 	return routes
 }

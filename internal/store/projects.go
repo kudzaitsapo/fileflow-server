@@ -52,7 +52,7 @@ func (s *ProjectStore) Create(ctx context.Context, project *Project) error {
 }
 
 func (s *ProjectStore) GetById(ctx context.Context, id int64) (*Project, error) {
-	query := `SELECT id, name, description, created_at, created_by_id, project_key FROM projects WHERE id = $1`
+	query := `SELECT id, name, description, created_at, COALESCE(created_by_id, 0) FROM projects WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -68,7 +68,7 @@ func (s *ProjectStore) GetById(ctx context.Context, id int64) (*Project, error) 
 				&project.Description,
 				&project.CreatedAt,
 				&project.CreatedById,
-				&project.ProjectKey)
+			)
 
 	return project, err
 }
@@ -99,7 +99,7 @@ func (s *ProjectStore) GetByKey(ctx context.Context, key string) (*Project, erro
 }
 
 func (s *ProjectStore) GetAll(ctx context.Context, limit int64, offset int64) ([]*Project, error) {
-	query := `SELECT id, name, description, created_at, created_by_id, project_key FROM projects LIMIT $1 OFFSET $2`
+	query := `SELECT id, name, description, created_at, COALESCE(created_by_id, 0) FROM projects LIMIT $1 OFFSET $2`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -119,7 +119,6 @@ func (s *ProjectStore) GetAll(ctx context.Context, limit int64, offset int64) ([
 			&project.Description,
 			&project.CreatedAt,
 			&project.CreatedById,
-			&project.ProjectKey,
 		)
 		if err != nil {
 			return nil, err

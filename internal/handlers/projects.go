@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -81,7 +82,7 @@ func HandleProjectList(w http.ResponseWriter, r *http.Request) {
 
 	projects, err := appStorage.Projects.GetAll(r.Context(), limit, offset)
 	if err != nil {
-		WriteJsonError(w, http.StatusInternalServerError, "failed to fetch projects")
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get projects: %v", err))
 		return
 	}
 

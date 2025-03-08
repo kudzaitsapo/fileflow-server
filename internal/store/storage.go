@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var (
@@ -36,7 +38,9 @@ type Storage struct {
 
 	StoredFiles interface {
 		Create(ctx context.Context, storedFile *StoredFile) error
-		GetById(ctx context.Context, id int64) (*StoredFile, error)
+		GetById(ctx context.Context, id uuid.UUID) (*StoredFile, error)
+		GetAllByProjectId(ctx context.Context, projectId int64, limit int64, offset int64) ([]*StoredFile, error)
+		GetByIdAndProjectKey(ctx context.Context, id uuid.UUID, projectKey string) (*StoredFile, error)
 		GetAllByProjectKey(ctx context.Context, projectKey string, limit int64, offset int64) ([]*StoredFile, error)
 	}
 }

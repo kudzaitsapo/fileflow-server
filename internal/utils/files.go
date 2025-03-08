@@ -3,11 +3,19 @@ package utils
 import (
 	"bytes"
 	"compress/flate"
+	"fmt"
 	"io"
+	"log"
 	"mime/multipart"
 	"os"
 	"path/filepath"
 )
+
+// customReadCloser combines an io.Reader with a custom close function
+type customReadCloser struct {
+	io.Reader
+	closeFunc func() error
+}
 
 func CompressAndSaveFile(file multipart.File, savedFileName string, saveFolder string) error {
 
@@ -18,8 +26,12 @@ func CompressAndSaveFile(file multipart.File, savedFileName string, saveFolder s
     }
 
 	if saveFolder != "" {
-		if _, dirErr := os.Stat(filepath.Join("uploads", saveFolder)); os.IsNotExist(dirErr) {
-			os.Mkdir(filepath.Join("uploads", saveFolder), 0755)
+		if _, dirCreateErr := os.Stat(filepath.Join("uploads", saveFolder)); os.IsNotExist(dirCreateErr) {
+			createDirErr := os.MkdirAll(filepath.Join("uploads", saveFolder), 0755)
+			if createDirErr != nil {
+				log.Printf("Error creating directory: %v", createDirErr)
+				return createDirErr
+			}
 		}
 		outputFileName = filepath.Join("uploads", saveFolder, outputFileName)
 	} else {
@@ -31,7 +43,7 @@ func CompressAndSaveFile(file multipart.File, savedFileName string, saveFolder s
     if err != nil {
         return err
     }
-    defer file.Close() // Ensure the file is closed after reading
+    defer file.Close()
 
     // Compress using deflate
     var b bytes.Buffer
@@ -52,39 +64,102 @@ func CompressAndSaveFile(file multipart.File, savedFileName string, saveFolder s
 
 }
 
-func DecompressFile(inputFileName string) (string, error) {
+func DecompressFile(compressedFileName string, folder string) (*os.File, error) {
+	// Create a temporary file for the decompressed output
+	fileNameWithFolder := filepath.Base(compressedFileName)
+	if folder != "" {
+		fileNameWithFolder = filepath.Join("uploads", folder, fileNameWithFolder)
+	} else {
+		fileNameWithFolder = filepath.Join("uploads", fileNameWithFolder)
+	}
 
-	// Open the compressed file for reading.
-	inFile, err := os.Open(inputFileName)
+
+	tempDir := os.TempDir()
+
+	// Ensure the temp directory exists.
+	if _, tmpDirCreateErr := os.Stat(tempDir); os.IsNotExist(tmpDirCreateErr) {
+		tmpDirCreateErr = os.MkdirAll(tempDir, 0755)
+		if tmpDirCreateErr != nil {
+			return nil, tmpDirCreateErr
+		}
+	}
+
+	outputFile, err := os.CreateTemp(tempDir, "decompressed-*")
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("failed to create temporary file: %w", err)
 	}
-	defer inFile.Close()
 
-	// Create a new flate reader to decompress the data.
-	reader := flate.NewReader(inFile)
-	defer reader.Close()
-
-	// Create the output file name by prefixing with "decompressed_".
-	outputFileName := "decompressed_" + filepath.Base(inputFileName)
-	outFile, err := os.Create(outputFileName)
+	// Open the compressed file
+	compressedFile, err := os.Open(fileNameWithFolder)
 	if err != nil {
-		return "", err
+		outputFile.Close()
+		os.Remove(outputFile.Name())
+		return nil, fmt.Errorf("failed to open compressed file: %w", err)
 	}
-	defer outFile.Close()
+	defer compressedFile.Close()
 
-	// Copy the decompressed data to the output file.
-	if _, err := io.Copy(outFile, reader); err != nil {
-		return "", err
+	// Create a flate reader
+	flateReader := flate.NewReader(compressedFile)
+	defer flateReader.Close()
+
+	// Copy decompressed data to the output file
+	_, err = io.Copy(outputFile, flateReader)
+	if err != nil {
+		outputFile.Close()
+		os.Remove(outputFile.Name())
+		return nil, fmt.Errorf("decompression failed: %w", err)
 	}
 
-	return outputFileName, nil
+	// Seek to the beginning of the file so it can be read from the start
+	_, err = outputFile.Seek(0, 0)
+	if err != nil {
+		outputFile.Close()
+		os.Remove(outputFile.Name())
+		return nil, fmt.Errorf("failed to seek to beginning of file: %w", err)
+	}
+
+	return outputFile, nil
 }
 
-func SaveCompressedFile(file multipart.File) (*os.File, error) {
+// DecompressFileAndReturnStream decompresses a file and returns a ReadCloser.
+// This is an alternative implementation that returns a stream instead of a file.
+func DecompressFileAndReturnStream(compressedFileName string, folder string) (io.ReadCloser, error) {
+	// Open the compressed file
 
-	return nil, nil
+	fileNameWithFolder := filepath.Base(compressedFileName)
+	if folder != "" {
+		fileNameWithFolder = filepath.Join("uploads", folder, fileNameWithFolder)
+	} else {
+		fileNameWithFolder = filepath.Join("uploads", fileNameWithFolder)
+	}
+
+	compressedFile, err := os.Open(fileNameWithFolder)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open compressed file: %w", err)
+	}
+
+	// Create a flate reader - this is the stream that will be returned
+	flateReader := flate.NewReader(compressedFile)
+
+	// Create a custom ReadCloser that closes both the flateReader and the compressedFile
+	return &customReadCloser{
+		Reader: flateReader,
+		closeFunc: func() error {
+			err1 := flateReader.Close()
+			err2 := compressedFile.Close()
+			if err1 != nil {
+				return err1
+			}
+			return err2
+		},
+	}, nil
 }
+
+
+func (c *customReadCloser) Close() error {
+	return c.closeFunc()
+}
+
 
 func GetFileExtension(fileName string) string {
 	return filepath.Ext(fileName)

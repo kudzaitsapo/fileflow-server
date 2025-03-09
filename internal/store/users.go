@@ -180,7 +180,7 @@ func (s *UserStore) delete(ctx context.Context, tx *sql.Tx, id int64) error {
 
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
-		SELECT id, email, password, created_at, is_active, role_id FROM users
+		SELECT id, email, first_name, password, created_at, is_active, role_id FROM users
 		WHERE email = $1
 	`
 
@@ -192,6 +192,7 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error)
 	err := s.db.QueryRowContext(ctx, query, email).Scan(
 		&user.ID,
 		&user.Email,
+		&user.FirstName,
 		&user.Password.hash,
 		&user.CreatedAt,
 		&user.IsActive,

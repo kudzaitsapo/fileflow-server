@@ -10,5 +10,5 @@
   - [ ] Maximum / minimum file size allowed
 - [ ] Implement file resource / mime type matching => Define mime types and file extensions
 - [ ] User Management
-- [ ] Auth Login / Logout
-- [ ] Front end - Initialise front end
+- [x] Auth Login / Logout on front-end + backend (integrated)
+- [x] Front end - Initialise front end

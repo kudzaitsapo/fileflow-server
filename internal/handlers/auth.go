@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -42,7 +43,7 @@ func HandleAuthentication(w http.ResponseWriter, r *http.Request) {
 
 	user, err := store.Users.GetByEmail(r.Context(), payload.Email)
 	if err != nil {
-		WriteJsonError(w, http.StatusUnauthorized, "invalid credentials")
+		WriteJsonError(w, http.StatusUnauthorized, fmt.Sprintf("error getting user: %v", err))
 		return
 	}
 
@@ -54,7 +55,7 @@ func HandleAuthentication(w http.ResponseWriter, r *http.Request) {
 	passErr := user.Password.Compare(payload.Password)
 
 	if passErr != nil {
-		WriteJsonError(w, http.StatusUnauthorized, "invalid credentials")
+		WriteJsonError(w, http.StatusUnauthorized, fmt.Sprintf("error comparing passwords: %v", passErr))
 		return
 	}
 

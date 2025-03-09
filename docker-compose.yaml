@@ -1,4 +1,16 @@
 services:
+  # web:
+  #   build:
+  #     context: ./web
+  #     dockerfile: Dockerfile.web
+  #   container_name: ff-web
+  #   restart: always
+  #   ports:
+  #     - "3000:3000"
+  #   env_file:
+  #     - ./web/.env.local
+  #   depends_on:
+  #     - server
   server:
     build: .
     container_name: ff-server

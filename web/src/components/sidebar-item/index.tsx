@@ -15,11 +15,13 @@ const SidebarItem: React.FC<SidebarItemProps> = ({
 }) => {
   return (
     <div
-      className={`sidebar-item ${isActive ? "active" : ""}`}
+      className={`flex items-center gap-3 p-2 rounded-md text-sm cursor-pointer ${
+        isActive ? "bg-blue-500 text-white" : "text-gray-600 hover:bg-gray-100"
+      }`}
       onClick={onClick}
     >
       <svg
-        className="sidebar-icon"
+        className={`w-4 h-4 ${isActive ? "text-white" : "text-gray-500"}`}
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
         fill="none"

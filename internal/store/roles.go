@@ -12,9 +12,22 @@ type Role struct {
 	Level       int    `json:"level"`
 }
 
-
 type RoleStore struct {
 	db *sql.DB
+}
+
+func (s *RoleStore) Count(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM roles`
+
+	var count int64
+
+	err := s.db.QueryRowContext(ctx, query).Scan(&count)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
 func (s *RoleStore) GetByName(ctx context.Context, slug string) (*Role, error) {

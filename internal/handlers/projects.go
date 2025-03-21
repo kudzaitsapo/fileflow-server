@@ -12,28 +12,29 @@ import (
 )
 
 type ProjectCreateRequest struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	MaxUploadSize int64  `json:"max_upload_size"`
 }
 
 type ProjectResponse struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	CreatedAt   string `json:"created_at"`
-	CreatedById int64  `json:"created_by_id"`
-	ProjectKey  string `json:"project_key"`
+	ID            int64  `json:"id"`
+	Name          string `json:"name"`
+	Description   string `json:"description"`
+	CreatedAt     string `json:"created_at"`
+	CreatedById   int64  `json:"created_by_id"`
+	ProjectKey    string `json:"project_key"`
+	MaxUploadSize int64  `json:"max_upload_size"`
 }
 
 func GenerateRandomKey() string {
 	return uuid.New().String()
 }
 
-
 func HandleProjectCreation(w http.ResponseWriter, r *http.Request) {
 	var payload ProjectCreateRequest
 	if err := ReadJson(w, r, &payload); err != nil {
-		WriteJsonError(w, http.StatusBadRequest, "invalid request payload")
+		WriteJsonError(w, http.StatusBadRequest, fmt.Sprintf("invalid request payload: %v", err))
 		return
 	}
 
@@ -48,11 +49,12 @@ func HandleProjectCreation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	project := &store.Project{
-		Name:        payload.Name,
-		Description: payload.Description,
-		CreatedAt:   time.Now().Format(time.RFC3339),
-		CreatedById: currentUser.ID,
-		ProjectKey:  GenerateRandomKey(),
+		Name:          payload.Name,
+		Description:   payload.Description,
+		CreatedAt:     time.Now().Format(time.RFC3339),
+		CreatedById:   currentUser.ID,
+		ProjectKey:    GenerateRandomKey(),
+		MaxUploadSize: payload.MaxUploadSize,
 	}
 
 	err := appStorage.Projects.Create(r.Context(), project)
@@ -62,12 +64,13 @@ func HandleProjectCreation(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := &ProjectResponse{
-		ID:          project.ID,
-		Name:        project.Name,
-		Description: project.Description,
-		CreatedAt:   project.CreatedAt,
-		CreatedById: project.CreatedById,
-		ProjectKey:  project.ProjectKey,
+		ID:            project.ID,
+		Name:          project.Name,
+		Description:   project.Description,
+		CreatedAt:     project.CreatedAt,
+		CreatedById:   project.CreatedById,
+		ProjectKey:    project.ProjectKey,
+		MaxUploadSize: project.MaxUploadSize,
 	}
 
 	WriteJson(w, http.StatusCreated, response)
@@ -89,12 +92,13 @@ func HandleProjectList(w http.ResponseWriter, r *http.Request) {
 	response := make([]*ProjectResponse, 0)
 	for _, project := range projects {
 		response = append(response, &ProjectResponse{
-			ID:          project.ID,
-			Name:        project.Name,
-			Description: project.Description,
-			CreatedAt:   project.CreatedAt,
-			CreatedById: project.CreatedById,
-			ProjectKey:  project.ProjectKey,
+			ID:            project.ID,
+			Name:          project.Name,
+			Description:   project.Description,
+			CreatedAt:     project.CreatedAt,
+			CreatedById:   project.CreatedById,
+			ProjectKey:    project.ProjectKey,
+			MaxUploadSize: project.MaxUploadSize,
 		})
 	}
 

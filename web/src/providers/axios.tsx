@@ -8,13 +8,18 @@ import { ApiError } from "@/models/error";
 interface AxiosContextType {
   axiosInstance: AxiosInstance;
 
-  get: <T>(url: string) => Promise<T | ApiError>;
+  get: <T>(
+    url: string,
+    pathParams?: Record<string, string>,
+    headers?: Record<string, string>
+  ) => Promise<T | ApiError>;
 
   post: <T>(
     url: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    pathParams?: Record<string, string>
   ) => Promise<T>;
 }
 
@@ -33,14 +38,20 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
   });
 
   // GET method: retrieves data from the given URL
-  const get = async <T,>(url: string): Promise<T | ApiError> => {
+  const get = async <T,>(
+    url: string,
+    pathParams?: Record<string, string>,
+    headers?: Record<string, string>
+  ): Promise<T | ApiError> => {
     if (!session || !session.user || !session.user.accessToken) {
       throw new Error("No session available. Please login.");
     }
     try {
       const response = await axiosInstance.get<T>(url, {
+        params: pathParams,
         headers: {
           Authorization: `Bearer ${session.user.accessToken}`,
+          ...headers,
         },
       });
       return response.data;
@@ -57,12 +68,14 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
     url: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     data: any,
-    headers?: Record<string, string>
+    headers?: Record<string, string>,
+    pathParams?: Record<string, string>
   ): Promise<T> => {
     if (!session || !session.user || !session.user.accessToken) {
       throw new Error("No session available. Please login.");
     }
     const response = await axiosInstance.post<T>(url, data, {
+      params: pathParams,
       headers: {
         ...headers,
         Authorization: `Bearer ${session.user.accessToken}`,

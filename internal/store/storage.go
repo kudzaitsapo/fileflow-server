@@ -15,14 +15,19 @@ var (
 	QueryTimeoutDuration = time.Second * 5
 )
 
+type Counter interface {
+	Count(ctx context.Context) (int64, error)
+}
 
 type Storage struct {
 	Roles interface {
+		Counter
 		GetByName(ctx context.Context, name string) (*Role, error)
 		Create(ctx context.Context, tx *sql.Tx, role *Role) error
 	}
 
 	Users interface {
+		Counter
 		Create(ctx context.Context, tx *sql.Tx, user *User) error
 		GetByEmail(ctx context.Context, email string) (*User, error)
 		GetById(ctx context.Context, id int64) (*User, error)
@@ -30,6 +35,7 @@ type Storage struct {
 	}
 
 	Projects interface {
+		Counter
 		Create(ctx context.Context, project *Project) error
 		GetById(ctx context.Context, id int64) (*Project, error)
 		GetByKey(ctx context.Context, key string) (*Project, error)
@@ -43,14 +49,30 @@ type Storage struct {
 		GetByIdAndProjectKey(ctx context.Context, id uuid.UUID, projectKey string) (*StoredFile, error)
 		GetAllByProjectKey(ctx context.Context, projectKey string, limit int64, offset int64) ([]*StoredFile, error)
 	}
+
+	FileTypes interface {
+		Counter
+		Create(ctx context.Context, fileType *FileType) error
+		GetById(ctx context.Context, id int64) (*FileType, error)
+		GetByMimeType(ctx context.Context, mimeType string) (*FileType, error)
+		GetAll(ctx context.Context, limit int64, offset int64) ([]*FileType, error)
+	}
+
+	ProjectAllowedFileTypes interface {
+		Create(ctx context.Context, projectAllowedFileType *ProjectAllowedFileType) error
+		GetByProjectId(ctx context.Context, projectId int64) ([]*ProjectAllowedFileType, error)
+		FileTypeIsAllowed(ctx context.Context, projectId int64, mimetype string) (bool, error)
+	}
 }
 
 func InitialiseStorage(db *sql.DB) *Storage {
 	return &Storage{
-		Roles: &RoleStore{db},
-		Users: &UserStore{db},
-		Projects: &ProjectStore{db},
-		StoredFiles: &StoredFileStore{db},
+		Roles:                   &RoleStore{db},
+		Users:                   &UserStore{db},
+		Projects:                &ProjectStore{db},
+		StoredFiles:             &StoredFileStore{db},
+		FileTypes:               &FileTypeStore{db},
+		ProjectAllowedFileTypes: &ProjectAllowedFileTypeStore{db},
 	}
 }
 

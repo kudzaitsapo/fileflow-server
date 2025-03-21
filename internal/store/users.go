@@ -7,12 +7,10 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-
 type password struct {
 	text *string
 	hash []byte
 }
-
 
 type User struct {
 	ID        int64    `json:"id"`
@@ -46,6 +44,17 @@ func (p *password) Compare(text string) error {
 	return bcrypt.CompareHashAndPassword(p.hash, []byte(text))
 }
 
+func (s *UserStore) Count(ctx context.Context) (int64, error) {
+	query := `SELECT COUNT(*) FROM users`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	var count int64
+	err := s.db.QueryRowContext(ctx, query).Scan(&count)
+
+	return count, err
+}
 
 func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `INSERT INTO users (email,
@@ -57,7 +66,6 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
-
 
 	roleId := user.RoleID
 	if roleId == 0 {
@@ -177,7 +185,6 @@ func (s *UserStore) delete(ctx context.Context, tx *sql.Tx, id int64) error {
 	return nil
 }
 
-
 func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error) {
 	query := `
 		SELECT id, email, first_name, password, created_at, is_active, role_id FROM users
@@ -186,7 +193,6 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error)
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
-
 
 	user := &User{}
 	err := s.db.QueryRowContext(ctx, query, email).Scan(
@@ -210,4 +216,3 @@ func (s *UserStore) GetByEmail(ctx context.Context, email string) (*User, error)
 
 	return user, nil
 }
-

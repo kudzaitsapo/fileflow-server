@@ -1,14 +1,28 @@
 # TODO LIST v1.0212344109103
 
 - [x] Implement fetching all projects on API
-- [x] Implement fetching all files uploaded to a project
+- [x] Implement fetching all files uploaded to a project on the backend
+- [ ] Implement file list on the front end
 - [x] Implement fetching file info based on file id
 - [x] Instead of using int64 id, implement uuids for stored_file primary key
-- [ ] Implement project settings - includes
+- [ ] Implement project settings on the front-end - includes
   - [ ] File based icons
   - [ ] Allowed file types / file validation
-  - [ ] Maximum / minimum file size allowed
-- [ ] Implement file resource / mime type matching => Define mime types and file extensions
-- [ ] User Management
+  - [x] Maximum / minimum file size allowed
+- [x] Implement file resource / mime type matching => Define mime types and file extensions
+- [ ] User Management - front-end template
+- [ ] Implement User management on the backend
 - [x] Auth Login / Logout on front-end + backend (integrated)
 - [x] Front end - Initialise front end
+- [x] Project management - create project on the front end
+- [x] Fix seeding of items so that if something exists, it's not seeded instead of breaking the backend initialisation
+- [x] Update project creation API to accept file size limits
+- [x] Update file upload API to validate settings from project
+- [ ] Vault ? To think about
+- [x] Seed mime types
+- [ ] Update project settings - backend
+- [ ] Update project settings - front-end
+- [ ] Implement API key re-generation
+- [ ] Update backend API for project creation to allow mime types at project creation / settings update
+- [ ] Implement API to fetch available mime types
+- [ ] Implement front-end fetching of available mime types

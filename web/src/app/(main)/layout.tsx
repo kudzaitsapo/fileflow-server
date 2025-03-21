@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+//import "@/styles/index.css";
 import "@/app/globals.css";
 import AuthProvider from "@/providers/auth";
 import { AxiosProvider } from "@/providers/axios";
@@ -22,10 +23,12 @@ export default function RootLayout({
         <AuthProvider>
           <AxiosProvider>
             <ActiveProjectProvider>
-              <Header />
-              <div className="layout">
-                <SideBar />
-                <div className="main-content">{children}</div>
+              <div className="bg-gray-100 text-gray-800">
+                <Header />
+                <div className="flex h-[calc(100vh-4rem)]">
+                  <SideBar />
+                  {children}
+                </div>
               </div>
             </ActiveProjectProvider>
           </AxiosProvider>

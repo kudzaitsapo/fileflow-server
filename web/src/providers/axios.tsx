@@ -21,6 +21,20 @@ interface AxiosContextType {
     headers?: Record<string, string>,
     pathParams?: Record<string, string>
   ) => Promise<T>;
+
+  put: <T>(
+    url: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any,
+    headers?: Record<string, string>,
+    pathParams?: Record<string, string>
+  ) => Promise<T>;
+
+  delete: (
+    url: string,
+    pathParams?: Record<string, string>,
+    headers?: Record<string, string>
+  ) => Promise<void>;
 }
 
 const AxiosContext = createContext<AxiosContextType | null>(null);
@@ -84,8 +98,47 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
     return response.data;
   };
 
+  const put = async <T,>(
+    url: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data: any,
+    headers?: Record<string, string>,
+    pathParams?: Record<string, string>
+  ): Promise<T> => {
+    if (!session || !session.user || !session.user.accessToken) {
+      throw new Error("No session available. Please login.");
+    }
+    const response = await axiosInstance.put<T>(url, data, {
+      params: pathParams,
+      headers: {
+        ...headers,
+        Authorization: `Bearer ${session.user.accessToken}`,
+      },
+    });
+    return response.data;
+  };
+
+  const deleteMethod = async (
+    url: string,
+    pathParams?: Record<string, string>,
+    headers?: Record<string, string>
+  ): Promise<void> => {
+    if (!session || !session.user || !session.user.accessToken) {
+      throw new Error("No session available. Please login.");
+    }
+    await axiosInstance.delete(url, {
+      params: pathParams,
+      headers: {
+        Authorization: `Bearer ${session.user.accessToken}`,
+        ...headers,
+      },
+    });
+  };
+
   return (
-    <AxiosContext.Provider value={{ axiosInstance, get, post }}>
+    <AxiosContext.Provider
+      value={{ axiosInstance, get, post, put, delete: deleteMethod }}
+    >
       {children}
     </AxiosContext.Provider>
   );

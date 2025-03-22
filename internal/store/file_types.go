@@ -9,7 +9,7 @@ import (
 type FileType struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
-	MimeType    string `json:"mime_type"`
+	MimeType    string `json:"mimetype"`
 	Description string `json:"description"`
 	Icon        string `json:"icon"`
 	CreatedAt   string `json:"created_at"`
@@ -57,7 +57,7 @@ func (s *FileTypeStore) Count(ctx context.Context) (int64, error) {
 }
 
 func (s *FileTypeStore) GetById(ctx context.Context, id int64) (*FileType, error) {
-	query := `SELECT id, name, mime_type, description, icon, created_at FROM file_types WHERE id = $1`
+	query := `SELECT id, name, mimetype, description, icon, created_at FROM file_types WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -68,7 +68,7 @@ func (s *FileTypeStore) GetById(ctx context.Context, id int64) (*FileType, error
 }
 
 func (s *FileTypeStore) GetByMimeType(ctx context.Context, mimeType string) (*FileType, error) {
-	query := `SELECT id, name, mime_type, description, icon, created_at FROM file_types WHERE mime_type = $1`
+	query := `SELECT id, name, mimetype, description, icon, created_at FROM file_types WHERE mimetype = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -79,7 +79,7 @@ func (s *FileTypeStore) GetByMimeType(ctx context.Context, mimeType string) (*Fi
 }
 
 func (s *FileTypeStore) GetAll(ctx context.Context, limit int64, offset int64) ([]*FileType, error) {
-	query := `SELECT id, name, mime_type, description, icon, created_at FROM file_types LIMIT $1 OFFSET $2`
+	query := `SELECT id, name, mimetype, description, icon, created_at FROM file_types LIMIT $1 OFFSET $2`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()

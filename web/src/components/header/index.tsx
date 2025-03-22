@@ -14,8 +14,14 @@ const Header: React.FC = () => {
           <span>FileFlow</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold">
-            {(session && session.user && session.user.name[0]) ?? `FF`}
+          <div className="flex items-center gap-2">
+            <span className="font-medium">
+              {(session && session.user && session.user.name) ??
+                "FileFlow User"}
+            </span>
+            <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold">
+              {(session && session.user && session.user.name[0]) ?? `FF`}
+            </div>
           </div>
         </div>
       </header>

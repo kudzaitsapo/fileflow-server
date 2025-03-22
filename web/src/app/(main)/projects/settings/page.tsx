@@ -1,19 +1,30 @@
 "use client";
-import { IFormValidationErrors, IProjectFormProps } from "@/models/project";
+import { AlertCircleIcon, CopyIcon, RefreshIcon } from "@/components/icons";
+import { IFileType } from "@/models/file_type";
+import { IFormResult } from "@/models/form";
+import {
+  IFormValidationErrors,
+  IProjectFormProps,
+  Project,
+} from "@/models/project";
+import { useAxios } from "@/providers/axios";
 import { useActiveProject } from "@/providers/project";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
-//import { useParams } from "next/navigation";
-import React, { useEffect, useState } from "react";
+import React, { FormEvent, useEffect, useState } from "react";
 import { ScaleLoader } from "react-spinners";
 
 const ProjectSettingsPage: React.FC = () => {
-  //const { id } = useParams<{ id: string }>();
-
   const { activeProject } = useActiveProject();
+  const { data: session } = useSession();
 
   const [isLoading, setIsLoading] = useState(false);
   const [regeneratingKey, setRegeneratingKey] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [formResult, setFormResult] = useState<IFormResult>({
+    success: false,
+    message: "",
+    showResult: false,
+  });
   const [projectKey, setProjectKey] = useState("proj_5f8a7b3c9d2e1f0a4b6c8d7e");
 
   const [formData, setFormData] = useState<IProjectFormProps>({
@@ -23,40 +34,38 @@ const ProjectSettingsPage: React.FC = () => {
     allowedFiles: ["image/jpeg", "image/png", "application/pdf"],
   });
 
-  console.log("LOG::activeProject: ", activeProject);
-
   const [errors, setErrors] = useState<IFormValidationErrors>({
     projectName: "",
     maxFileSize: "",
   });
+  const [mimeTypes, setMimeTypes] = useState<IFileType[]>([]);
+  const { get, post, put } = useAxios();
+  const { setActiveProject } = useActiveProject();
 
-  const mimeTypeOptions = [
-    { value: "image/jpeg", label: "JPEG Images (.jpg, .jpeg)" },
-    { value: "image/png", label: "PNG Images (.png)" },
-    { value: "image/gif", label: "GIF Images (.gif)" },
-    { value: "image/svg+xml", label: "SVG Images (.svg)" },
-    { value: "application/pdf", label: "PDF Documents (.pdf)" },
-    { value: "application/msword", label: "Word Documents (.doc)" },
-    {
-      value:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      label: "Word Documents (.docx)",
-    },
-    { value: "text/plain", label: "Text Files (.txt)" },
-    { value: "text/csv", label: "CSV Files (.csv)" },
-    { value: "application/zip", label: "ZIP Archives (.zip)" },
-  ];
+  useEffect(() => {
+    async function fetchFileTypes() {
+      if (session && session.user) {
+        const fileTypes = await get<IFileType[]>("/file-types");
+        if (Array.isArray(fileTypes)) {
+          setMimeTypes(fileTypes);
+        }
+      }
+    }
+
+    fetchFileTypes();
+  }, [get, session]);
 
   useEffect(() => {
     if (activeProject) {
       setFormData({
         projectName: activeProject.name,
         description: activeProject.description,
-        maxFileSize: activeProject.max_file_size,
+        maxFileSize: activeProject.max_upload_size,
         allowedFiles: ["image/jpeg", "image/png", "application/pdf"],
       });
+
+      setProjectKey(activeProject.project_key);
     }
-    console.log("LOG::activeProject: ", activeProject);
   }, [activeProject]);
 
   const handleInputChange = (
@@ -102,41 +111,102 @@ const ProjectSettingsPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleSubmit = (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setFormResult({
+      success: true,
+      message: "",
+      showResult: false,
+    });
 
     if (validateForm()) {
       setIsLoading(true);
 
-      // Simulate API call
-      setTimeout(() => {
-        setIsLoading(false);
-        setSuccessMessage("Project settings updated successfully!");
+      const payload = {
+        id: activeProject!.id,
+        name: formData.projectName,
+        description: formData.description,
+        max_upload_size: parseInt(formData.maxFileSize.toString()),
+        allowed_file_types: formData.allowedFiles,
+      };
 
-        // Clear success message after 3 seconds
-        setTimeout(() => {
-          setSuccessMessage("");
-        }, 3000);
-      }, 1000);
+      try {
+        const response = await put<Project>("/projects", payload);
+        setIsLoading(false);
+        setFormResult({
+          success: true,
+          message: "Project settings updated successfully",
+          showResult: true,
+        });
+        setActiveProject(response);
+      } catch (e) {
+        console.log("Error: ", e);
+        setIsLoading(false);
+        setFormResult({
+          success: false,
+          message: "Failed to update project settings",
+          showResult: true,
+        });
+      }
+
+      // Clear errors / messages after 1 second
+      setTimeout(() => {
+        setFormResult({
+          success: true,
+          message: "",
+          showResult: false,
+        });
+      }, 4000);
     }
   };
 
-  const handleRegenerateKey = () => {
+  const handleRegenerateKey = async () => {
     setRegeneratingKey(true);
 
-    // Simulate API call to regenerate key
-    setTimeout(() => {
-      const newKey = "proj_" + Math.random().toString(36).substr(2, 20);
-      setProjectKey(newKey);
-      setRegeneratingKey(false);
-      setSuccessMessage("Project key regenerated successfully!");
+    try {
+      const payload = {
+        id: activeProject?.id,
+      };
 
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        setSuccessMessage("");
-      }, 3000);
-    }, 1000);
+      const result = await post<Project>("/projects/re-generate-key", payload);
+      setFormResult({
+        success: true,
+        message: "API key regenerated successfully",
+        showResult: true,
+      });
+
+      setProjectKey(result.project_key);
+      setRegeneratingKey(false);
+    } catch (e) {
+      console.log("Error: ", e);
+      setRegeneratingKey(false);
+      setFormResult({
+        success: false,
+        message: "Failed to regenerate API key",
+        showResult: true,
+      });
+    }
+
+    // Clear messages after 3 seconds
+    setTimeout(() => {
+      setFormResult({
+        success: false,
+        message: "",
+        showResult: false,
+      });
+    }, 4000);
+  };
+
+  const handleProjectDeletion = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    console.log("Project deletion initiated");
+    const confirmDelete = confirm(
+      "Are you sure you want to delete this project? This will delete all the files uploaded to this project, and cannot be undone."
+    );
+    if (confirmDelete) {
+      // Delete project
+      // TODO: Handle project deletion
+    }
   };
 
   return (
@@ -161,9 +231,15 @@ const ProjectSettingsPage: React.FC = () => {
           </p>
         </div>
 
-        {successMessage && (
-          <div className="mb-6 p-3 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
-            {successMessage}
+        {formResult.showResult && (
+          <div
+            className={`mb-6 p-3 border rounded-md text-sm ${
+              formResult.success
+                ? "bg-green-50 border-green-200 text-green-700"
+                : "bg-red-50 border-red-200 text-red-700"
+            }`}
+          >
+            {formResult.message}
           </div>
         )}
 
@@ -186,7 +262,7 @@ const ProjectSettingsPage: React.FC = () => {
                   onChange={handleInputChange}
                   className={`shadow-sm block w-full px-3 py-2 border ${
                     errors.projectName ? "border-red-300" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
                 />
                 {errors.projectName && (
                   <p className="mt-1 text-sm text-red-600">
@@ -211,7 +287,7 @@ const ProjectSettingsPage: React.FC = () => {
                   rows={3}
                   value={formData.description}
                   onChange={handleInputChange}
-                  className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Brief description of your project"
                 />
               </div>
@@ -235,7 +311,7 @@ const ProjectSettingsPage: React.FC = () => {
                   min="1"
                   className={`shadow-sm block w-full px-3 py-2 border ${
                     errors.maxFileSize ? "border-red-300" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
                 />
                 {errors.maxFileSize && (
                   <p className="mt-1 text-sm text-red-600">
@@ -260,12 +336,12 @@ const ProjectSettingsPage: React.FC = () => {
                   multiple
                   value={formData.allowedFiles}
                   onChange={handleMimeTypeChange}
-                  className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   size={5}
                 >
-                  {mimeTypeOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
+                  {mimeTypes.map((fileType) => (
+                    <option key={fileType.id} value={fileType.mimetype}>
+                      {fileType.name}
                     </option>
                   ))}
                 </select>
@@ -278,12 +354,10 @@ const ProjectSettingsPage: React.FC = () => {
 
           {/* Project Key Section */}
           <div className="mt-8 pt-6 border-t border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              Project API Key
-            </h2>
+            <h2 className="text-lg font-medium text-gray-900">Project Key</h2>
             <p className="mt-1 text-sm text-gray-500">
-              This key is used to authenticate requests to your project&apos;s
-              API
+              This key is used to authenticate requests to the API for file
+              uploads. Keep it secure.
             </p>
 
             <div className="mt-4 flex items-center">
@@ -298,40 +372,19 @@ const ProjectSettingsPage: React.FC = () => {
                   type="button"
                   onClick={() => {
                     navigator.clipboard.writeText(projectKey);
-                    setSuccessMessage("API key copied to clipboard!");
-                    setTimeout(() => {
-                      setSuccessMessage("");
-                    }, 3000);
+
+                    setTimeout(() => {}, 3000);
                   }}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 mr-2"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 mr-2 cursor-pointer"
                 >
                   {/* Copy icon as SVG */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mr-2 h-4 w-4"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <rect
-                      x="9"
-                      y="9"
-                      width="13"
-                      height="13"
-                      rx="2"
-                      ry="2"
-                    ></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
+                  <CopyIcon className="mr-2 h-4 w-4" />
                   Copy
                 </button>
                 <button
                   type="button"
                   onClick={handleRegenerateKey}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
                   disabled={regeneratingKey}
                 >
                   {regeneratingKey ? (
@@ -339,21 +392,7 @@ const ProjectSettingsPage: React.FC = () => {
                   ) : (
                     <>
                       {/* Refresh/Regenerate icon as SVG */}
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="mr-2 h-4 w-4"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M21 2v6h-6"></path>
-                        <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
-                        <path d="M3 22v-6h6"></path>
-                        <path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path>
-                      </svg>
+                      <RefreshIcon className="mr-2 h-4 w-4" />
                       Regenerate
                     </>
                   )}
@@ -363,40 +402,39 @@ const ProjectSettingsPage: React.FC = () => {
             <div className="mt-2 flex items-start">
               <div className="flex-shrink-0">
                 {/* Alert Circle icon as SVG */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-yellow-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="12" y1="8" x2="12" y2="12"></line>
-                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
+                <AlertCircleIcon className="h-5 w-5 text-yellow-400" />
               </div>
               <div className="ml-2">
                 <p className="text-sm text-yellow-700">
-                  Regenerating your API key will invalidate the old key
+                  Regenerating your Project key will invalidate the old key
                   immediately. Make sure to update any systems using this key.
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="mt-8">
+          <div className="mt-8 flex space-x-4">
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-1/4 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 cursor-pointer"
               disabled={isLoading}
             >
               {isLoading ? (
                 <ScaleLoader loading={true} color="#fff" height={20} />
               ) : (
                 "Save Changes"
+              )}
+            </button>
+            <button
+              type="button"
+              className="w-1/4 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 cursor-pointer"
+              disabled={isLoading}
+              onClick={handleProjectDeletion}
+            >
+              {isLoading ? (
+                <ScaleLoader loading={true} color="#fff" height={20} />
+              ) : (
+                "Delete Project"
               )}
             </button>
           </div>

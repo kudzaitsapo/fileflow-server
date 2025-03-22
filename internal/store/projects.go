@@ -65,7 +65,7 @@ func (s *ProjectStore) Create(ctx context.Context, project *Project) error {
 }
 
 func (s *ProjectStore) GetById(ctx context.Context, id int64) (*Project, error) {
-	query := `SELECT id, name, description, created_at, COALESCE(created_by_id, 0), max_upload_size FROM projects WHERE id = $1`
+	query := `SELECT id, name, description, created_at, COALESCE(created_by_id, 0), max_upload_size, project_key FROM projects WHERE id = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -82,6 +82,7 @@ func (s *ProjectStore) GetById(ctx context.Context, id int64) (*Project, error) 
 		&project.CreatedAt,
 		&project.CreatedById,
 		&project.MaxUploadSize,
+		&project.ProjectKey,
 	)
 
 	return project, err
@@ -114,7 +115,7 @@ func (s *ProjectStore) GetByKey(ctx context.Context, key string) (*Project, erro
 }
 
 func (s *ProjectStore) GetAll(ctx context.Context, limit int64, offset int64) ([]*Project, error) {
-	query := `SELECT id, name, description, created_at, COALESCE(created_by_id, 0), max_upload_size FROM projects ORDER BY created_at DESC LIMIT $1 OFFSET $2`
+	query := `SELECT id, name, description, created_at, COALESCE(created_by_id, 0), max_upload_size, project_key FROM projects ORDER BY created_at DESC LIMIT $1 OFFSET $2`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -134,6 +135,8 @@ func (s *ProjectStore) GetAll(ctx context.Context, limit int64, offset int64) ([
 			&project.Description,
 			&project.CreatedAt,
 			&project.CreatedById,
+			&project.MaxUploadSize,
+			&project.ProjectKey,
 		)
 		if err != nil {
 			return nil, err
@@ -142,4 +145,24 @@ func (s *ProjectStore) GetAll(ctx context.Context, limit int64, offset int64) ([
 	}
 
 	return projects, nil
+}
+
+func (s *ProjectStore) Update(ctx context.Context, project *Project) error {
+	query := `UPDATE projects SET name = $1, description = $2, max_upload_size = $3, project_key = $4 WHERE id = $5`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	_, err := s.db.ExecContext(ctx, query, project.Name, project.Description, project.MaxUploadSize, project.ProjectKey, project.ID)
+	return err
+}
+
+func (s *ProjectStore) Delete(ctx context.Context, id int64) error {
+	query := `DELETE FROM projects WHERE id = $1`
+
+	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
+	defer cancel()
+
+	_, err := s.db.ExecContext(ctx, query, id)
+	return err
 }

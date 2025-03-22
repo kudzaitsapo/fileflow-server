@@ -1,0 +1,5 @@
+ALTER TABLE
+    stored_files
+ALTER COLUMN
+    icon
+SET DATA TYPE TEXT;

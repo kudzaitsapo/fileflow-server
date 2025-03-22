@@ -4,11 +4,16 @@ import {
   ListIcon,
   SearchIcon,
   SettingsIcon,
+  SVGDisplay,
+  TrashIcon,
   UploadIcon,
+  DownloadIcon,
+  EyeIcon,
 } from "@/components/icons";
 import { StoredFile } from "@/models/file";
 import { useAxios } from "@/providers/axios";
 import { useActiveProject } from "@/providers/project";
+import { formatBytes, formatDateTime } from "@/utils/common";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -148,92 +153,37 @@ export default function Home() {
                   <td className="py-3 px-4 border-b border-gray-200">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 flex items-center justify-center rounded bg-red-50 text-red-500">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                          <polyline points="14 2 14 8 20 8"></polyline>
-                          <path d="M9 15h6"></path>
-                          <path d="M9 11h6"></path>
-                        </svg>
+                        <SVGDisplay svg={file.icon || ""} />
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-800">
                           {file.name}
                         </div>
                         <div className="text-xs text-gray-500">
-                          /web-app/docs/
+                          Folder: {file.folder}
                         </div>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-600">
-                    3.2 MB
+                    {formatBytes(file.size)}
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200 text-sm">
                     PDF Document
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-600">
-                    March 4, 2025
+                    {formatDateTime(file.uploaded_at)}
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200">
                     <div className="flex gap-1">
                       <button className="bg-transparent border-none cursor-pointer p-1.5 rounded text-gray-500 hover:bg-gray-100 hover:text-gray-900">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                          <circle cx="12" cy="12" r="3"></circle>
-                        </svg>
+                        <EyeIcon width={18} height={18} />
                       </button>
                       <button className="bg-transparent border-none cursor-pointer p-1.5 rounded text-gray-500 hover:bg-gray-100 hover:text-gray-900">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                          <polyline points="7 10 12 15 17 10"></polyline>
-                          <line x1="12" y1="15" x2="12" y2="3"></line>
-                        </svg>
+                        <DownloadIcon width={18} height={18} />
                       </button>
                       <button className="bg-transparent border-none cursor-pointer p-1.5 rounded text-gray-500 hover:bg-gray-100 hover:text-gray-900">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M3 6h18"></path>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
+                        <TrashIcon width={18} height={18} />
                       </button>
                     </div>
                   </td>

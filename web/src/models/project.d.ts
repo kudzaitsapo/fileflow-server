@@ -1,9 +1,11 @@
 export interface Project {
   id: number;
   name: string;
-  max_file_size: number;
+  max_upload_size: number;
   description: string;
   created_at: string;
+  project_key: string;
+  allowed_file_types: string[];
 }
 
 export interface IProjectFormProps {

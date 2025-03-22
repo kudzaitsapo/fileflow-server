@@ -40,6 +40,8 @@ type Storage struct {
 		GetById(ctx context.Context, id int64) (*Project, error)
 		GetByKey(ctx context.Context, key string) (*Project, error)
 		GetAll(ctx context.Context, limit int64, offset int64) ([]*Project, error)
+		Update(ctx context.Context, project *Project) error
+		Delete(ctx context.Context, id int64) error
 	}
 
 	StoredFiles interface {

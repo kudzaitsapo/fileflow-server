@@ -1,5 +1,6 @@
 "use client";
 
+import { IFileType } from "@/models/file_type";
 import {
   IFormValidationErrors,
   IProjectFormProps,
@@ -8,7 +9,8 @@ import {
 import { useAxios } from "@/providers/axios";
 import { useActiveProject } from "@/providers/project";
 import Link from "next/link";
-import React, { FormEvent, useState } from "react";
+import React, { useEffect, FormEvent, useState } from "react";
+
 import { ScaleLoader } from "react-spinners";
 
 const ProjectCreationForm: React.FC = () => {
@@ -25,24 +27,19 @@ const ProjectCreationForm: React.FC = () => {
   const [isLoading, setLoading] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState("");
   const { setActiveProject } = useActiveProject();
+  const [mimeTypes, setMimeTypes] = useState<IFileType[]>([]);
+  const { get } = useAxios();
 
-  const mimeTypeOptions = [
-    { value: "image/jpeg", label: "JPEG Images (image/jpeg)" },
-    { value: "image/png", label: "PNG Images (image/png)" },
-    { value: "image/gif", label: "GIF Images (image/gif)" },
-    { value: "application/pdf", label: "PDF Documents (application/pdf)" },
-    {
-      value: "application/msword",
-      label: "Word Documents (application/msword)",
-    },
-    {
-      value:
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      label: "Word Documents (docx)",
-    },
-    { value: "text/plain", label: "Text Files (text/plain)" },
-    { value: "text/csv", label: "CSV Files (text/csv)" },
-  ];
+  useEffect(() => {
+    async function fetchFileTypes() {
+      const fileTypes = await get<IFileType[]>("/file-types");
+      if (Array.isArray(fileTypes)) {
+        setMimeTypes(fileTypes);
+      }
+    }
+
+    fetchFileTypes();
+  }, [get]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (e: any) => {
@@ -53,12 +50,9 @@ const ProjectCreationForm: React.FC = () => {
     });
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const handleMimeTypeChange = (e: any) => {
-    const selectedOptions = Array.from(
-      e.target.selectedOptions,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (option: any) => option.value
+  const handleMimeTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedOptions = Array.from(e.target.selectedOptions).map(
+      (option: HTMLOptionElement) => option.value
     );
     setFormData({
       ...formData,
@@ -152,7 +146,7 @@ const ProjectCreationForm: React.FC = () => {
                   onChange={handleInputChange}
                   className={`shadow-sm block w-full px-3 py-2 border ${
                     errors.projectName ? "border-red-300" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
                 />
                 {errors.projectName && (
                   <p className="mt-1 text-sm text-red-600">
@@ -180,7 +174,7 @@ const ProjectCreationForm: React.FC = () => {
                   min="1"
                   className={`shadow-sm block w-full px-3 py-2 border ${
                     errors.maxFileSize ? "border-red-300" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm`}
+                  } rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm`}
                 />
                 {errors.maxFileSize && (
                   <p className="mt-1 text-sm text-red-600">
@@ -206,7 +200,7 @@ const ProjectCreationForm: React.FC = () => {
                 rows={3}
                 value={formData.description}
                 onChange={handleInputChange}
-                className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 placeholder="Brief description of your project"
               />
             </div>
@@ -227,12 +221,12 @@ const ProjectCreationForm: React.FC = () => {
                 multiple
                 value={formData.allowedFiles}
                 onChange={handleMimeTypeChange}
-                className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="shadow-sm block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 size={5}
               >
-                {mimeTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
+                {mimeTypes.map((fileType) => (
+                  <option key={fileType.id} value={fileType.mimetype}>
+                    {fileType.name}
                   </option>
                 ))}
               </select>
@@ -245,7 +239,7 @@ const ProjectCreationForm: React.FC = () => {
           <div className="mt-8">
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               disabled={isLoading}
             >
               <ScaleLoader loading={isLoading} color="#fff" height={20} />

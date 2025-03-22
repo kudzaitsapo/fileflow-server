@@ -1,6 +1,10 @@
 import AlertCircleIcon from "./alertCircleIcon";
 import BarGraphIcon from "./barGraphIcon";
 import ChatIcon from "./chatIcon";
+import ChevronLeftIcon from "./chevronLeftIcon";
+import ChevronRightIcon from "./chevronRightIcon";
+import ChevronsLeftIcon from "./chevronsLeftIcon";
+import ChevronsRightIcon from "./chevronsRightIcon";
 import CopyIcon from "./copyIcon";
 import DownloadIcon from "./downloadIcon";
 import ExclamationCircleIcon from "./exclamationCircleIcon";
@@ -36,4 +40,8 @@ export {
   SVGDisplay,
   DownloadIcon,
   EyeIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ChevronsLeftIcon,
+  ChevronsRightIcon,
 };

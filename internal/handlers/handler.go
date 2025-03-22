@@ -17,7 +17,6 @@ func GetCurrentUser(r *http.Request) (*store.User, error) {
 		return nil, errors.New("authorization required to access")
 	}
 
-
 	// Expected format: "Bearer <token>"
 	parts := strings.SplitN(authHeader, " ", 2)
 	if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {

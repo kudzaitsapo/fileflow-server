@@ -1,9 +1,9 @@
 "use client";
 
 import React, { createContext, useContext, ReactNode } from "react";
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosError, AxiosInstance } from "axios";
 import { useSession } from "next-auth/react";
-import { ApiError } from "@/models/error";
+import { JsonResponse } from "@/models/apiResponse";
 
 interface AxiosContextType {
   axiosInstance: AxiosInstance;
@@ -12,7 +12,7 @@ interface AxiosContextType {
     url: string,
     pathParams?: Record<string, string>,
     headers?: Record<string, string>
-  ) => Promise<T | ApiError>;
+  ) => Promise<JsonResponse<T>>;
 
   post: <T>(
     url: string,
@@ -20,7 +20,7 @@ interface AxiosContextType {
     data: any,
     headers?: Record<string, string>,
     pathParams?: Record<string, string>
-  ) => Promise<T>;
+  ) => Promise<JsonResponse<T>>;
 
   put: <T>(
     url: string,
@@ -28,13 +28,13 @@ interface AxiosContextType {
     data: any,
     headers?: Record<string, string>,
     pathParams?: Record<string, string>
-  ) => Promise<T>;
+  ) => Promise<JsonResponse<T>>;
 
   delete: (
     url: string,
     pathParams?: Record<string, string>,
     headers?: Record<string, string>
-  ) => Promise<void>;
+  ) => Promise<JsonResponse<void>>;
 }
 
 const AxiosContext = createContext<AxiosContextType | null>(null);
@@ -56,12 +56,12 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
     url: string,
     pathParams?: Record<string, string>,
     headers?: Record<string, string>
-  ): Promise<T | ApiError> => {
+  ): Promise<JsonResponse<T>> => {
     if (!session || !session.user || !session.user.accessToken) {
       throw new Error("No session available. Please login.");
     }
     try {
-      const response = await axiosInstance.get<T>(url, {
+      const response = await axiosInstance.get<JsonResponse<T>>(url, {
         params: pathParams,
         headers: {
           Authorization: `Bearer ${session.user.accessToken}`,
@@ -71,9 +71,9 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
       return response.data;
     } catch (e) {
       console.log("LOG::axios-error: ", e);
-      const err: ApiError = {
-        message: "There was an error: ",
-      };
+      const axiosError = e as AxiosError;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const err = axiosError.response?.data as JsonResponse<any>;
       return err;
     }
   };
@@ -84,11 +84,11 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
     data: any,
     headers?: Record<string, string>,
     pathParams?: Record<string, string>
-  ): Promise<T> => {
+  ): Promise<JsonResponse<T>> => {
     if (!session || !session.user || !session.user.accessToken) {
       throw new Error("No session available. Please login.");
     }
-    const response = await axiosInstance.post<T>(url, data, {
+    const response = await axiosInstance.post<JsonResponse<T>>(url, data, {
       params: pathParams,
       headers: {
         ...headers,
@@ -104,11 +104,11 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
     data: any,
     headers?: Record<string, string>,
     pathParams?: Record<string, string>
-  ): Promise<T> => {
+  ): Promise<JsonResponse<T>> => {
     if (!session || !session.user || !session.user.accessToken) {
       throw new Error("No session available. Please login.");
     }
-    const response = await axiosInstance.put<T>(url, data, {
+    const response = await axiosInstance.put<JsonResponse<T>>(url, data, {
       params: pathParams,
       headers: {
         ...headers,
@@ -122,17 +122,20 @@ export const AxiosProvider = ({ children }: AxiosProviderProps) => {
     url: string,
     pathParams?: Record<string, string>,
     headers?: Record<string, string>
-  ): Promise<void> => {
+  ): Promise<JsonResponse<void>> => {
     if (!session || !session.user || !session.user.accessToken) {
       throw new Error("No session available. Please login.");
     }
-    await axiosInstance.delete(url, {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const response = await axiosInstance.delete<JsonResponse<any>>(url, {
       params: pathParams,
       headers: {
         Authorization: `Bearer ${session.user.accessToken}`,
         ...headers,
       },
     });
+
+    return response.data;
   };
 
   return (

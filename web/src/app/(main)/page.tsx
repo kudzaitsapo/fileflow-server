@@ -8,8 +8,8 @@ import {
   TrashIcon,
   UploadIcon,
   DownloadIcon,
-  EyeIcon,
 } from "@/components/icons";
+import TablePagination from "@/components/table/pagination";
 import { StoredFile } from "@/models/file";
 import { useAxios } from "@/providers/axios";
 import { useActiveProject } from "@/providers/project";
@@ -20,26 +20,44 @@ import { useEffect, useState } from "react";
 export default function Home() {
   const { activeProject } = useActiveProject();
   const [files, setFiles] = useState<StoredFile[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const { get } = useAxios();
   const router = useRouter();
 
+  const offset = (currentPage - 1) * pageSize;
+
   useEffect(() => {
     async function getProjectFiles(projectId: number) {
+      setIsLoading(true);
       const response = await get<StoredFile[]>(`/projects/${projectId}/files`, {
-        limit: "10",
+        limit: pageSize.toString(),
+        offset: offset.toString(),
       });
-      if (Array.isArray(response)) {
-        setFiles(response);
+      if (response.success) {
+        setFiles(response.result);
+        setTotal(response.meta.total_records);
       }
+      setIsLoading(false);
     }
 
     if (activeProject) {
       getProjectFiles(activeProject.id);
     }
-  }, [get, activeProject]);
+  }, [get, activeProject, pageSize, offset]);
 
   const handleNavigation = () => {
     router.push("/projects/settings");
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
   };
 
   return (
@@ -169,16 +187,13 @@ export default function Home() {
                     {formatBytes(file.size)}
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200 text-sm">
-                    PDF Document
+                    {file.file_type?.name || "Unknown"}
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200 text-sm text-gray-600">
                     {formatDateTime(file.uploaded_at)}
                   </td>
                   <td className="py-3 px-4 border-b border-gray-200">
                     <div className="flex gap-1">
-                      <button className="bg-transparent border-none cursor-pointer p-1.5 rounded text-gray-500 hover:bg-gray-100 hover:text-gray-900">
-                        <EyeIcon width={18} height={18} />
-                      </button>
                       <button className="bg-transparent border-none cursor-pointer p-1.5 rounded text-gray-500 hover:bg-gray-100 hover:text-gray-900">
                         <DownloadIcon width={18} height={18} />
                       </button>
@@ -191,6 +206,16 @@ export default function Home() {
               ))}
           </tbody>
         </table>
+
+        {/* Add the pagination footer */}
+        <TablePagination
+          total={total}
+          currentPage={currentPage}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+          isLoading={isLoading}
+        />
       </div>
     </div>
   );

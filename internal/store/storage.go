@@ -48,6 +48,7 @@ type Storage struct {
 		Create(ctx context.Context, storedFile *StoredFile) error
 		GetById(ctx context.Context, id uuid.UUID) (*StoredFile, error)
 		GetAllByProjectId(ctx context.Context, projectId int64, limit int64, offset int64) ([]*StoredFile, error)
+		CountProjectFiles(ctx context.Context, projectId int64) (int64, error)
 		GetByIdAndProjectKey(ctx context.Context, id uuid.UUID, projectKey string) (*StoredFile, error)
 		GetAllByProjectKey(ctx context.Context, projectKey string, limit int64, offset int64) ([]*StoredFile, error)
 	}

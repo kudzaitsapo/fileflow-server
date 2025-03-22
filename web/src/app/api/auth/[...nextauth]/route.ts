@@ -51,12 +51,17 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const response = await axiosInstance.post("/auth/login", data);
-          if (response.data && response.data.user && response.data.token) {
+          if (
+            response.data &&
+            response.data.result.user &&
+            response.data.result.token
+          ) {
+            const { user, token } = response.data.result;
             return {
-              id: response.data.user.id,
-              name: response.data.user.first_name,
-              email: response.data.user.email,
-              accessToken: response.data.token,
+              id: user.id,
+              name: user.first_name,
+              email: user.email,
+              accessToken: token,
             };
           }
 

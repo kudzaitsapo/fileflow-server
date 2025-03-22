@@ -54,6 +54,10 @@ curl -X POST -F 'file=@path/to/your/file.txt' http://localhost:3000/upload
 curl -X GET http://localhost:3000/files/<file_id>
 ```
 
+### Screenshots
+
+![Screenshot 1](./screenshots/screenshot.1.png)
+
 ## Roadmap
 
 - [ ] Implement versioning for stored objects

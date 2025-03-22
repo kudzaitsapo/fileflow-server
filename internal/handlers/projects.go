@@ -111,7 +111,7 @@ func HandleProjectCreation(w http.ResponseWriter, r *http.Request) {
 		AllowedFileTypes: payload.AllowedFileTypes,
 	}
 
-	WriteJson(w, http.StatusCreated, response)
+	SendJsonWithoutMeta(w, http.StatusCreated, response)
 }
 
 func HandleProjectList(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +140,18 @@ func HandleProjectList(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	WriteJson(w, http.StatusOK, response)
+	projectsCount, countErr := appStorage.Projects.Count(r.Context())
+	if countErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get project count: %v", countErr))
+		return
+	}
+	meta := &JsonMeta{
+		TotalRecords: projectsCount,
+		Limit:        limit,
+		Offset:       offset,
+	}
+
+	SendJson(w, http.StatusOK, response, *meta)
 }
 
 func HandleProjectUpdate(w http.ResponseWriter, r *http.Request) {
@@ -199,7 +210,7 @@ func HandleProjectUpdate(w http.ResponseWriter, r *http.Request) {
 		MaxUploadSize: project.MaxUploadSize,
 	}
 
-	WriteJson(w, http.StatusOK, response)
+	SendJsonWithoutMeta(w, http.StatusOK, response)
 }
 
 func HandleApiKeyRegeneration(w http.ResponseWriter, r *http.Request) {
@@ -242,7 +253,7 @@ func HandleApiKeyRegeneration(w http.ResponseWriter, r *http.Request) {
 		MaxUploadSize: project.MaxUploadSize,
 	}
 
-	WriteJson(w, http.StatusOK, response)
+	SendJsonWithoutMeta(w, http.StatusOK, response)
 }
 
 func HandleProjectDeletion(w http.ResponseWriter, r *http.Request) {
@@ -267,5 +278,5 @@ func HandleProjectDeletion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJson(w, http.StatusNoContent, nil)
+	SendJsonWithoutMeta(w, http.StatusNoContent, nil)
 }

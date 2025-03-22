@@ -10,7 +10,6 @@ import (
 	"github.com/kudzaitsapo/fileflow-server/cmd/app"
 )
 
-
 type LoginPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -27,8 +26,8 @@ type UserResponse struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
-	User UserResponse `json:"user"`
+	Token string       `json:"token"`
+	User  UserResponse `json:"user"`
 }
 
 func HandleAuthentication(w http.ResponseWriter, r *http.Request) {
@@ -74,9 +73,9 @@ func HandleAuthentication(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJson(w, http.StatusOK, 
+	SendJsonWithoutMeta(w, http.StatusOK,
 		LoginResponse{
-			Token: token, 
+			Token: token,
 			User: UserResponse{
 				ID:        user.ID,
 				Email:     user.Email,
@@ -89,4 +88,3 @@ func HandleAuthentication(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }
-

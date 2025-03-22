@@ -33,12 +33,12 @@ const SideBar: React.FC = () => {
       }
     };
 
-    fetchProjects().then((apiProjects) => {
-      if (Array.isArray(apiProjects)) {
-        setProjects(apiProjects);
-        setActiveProject(apiProjects[0]);
+    fetchProjects().then((apiResponse) => {
+      if (apiResponse?.success) {
+        setProjects(apiResponse.result);
+        setActiveProject(apiResponse.result[0]);
       } else {
-        console.log("LOG::error fetching projects: ", apiProjects);
+        console.log("LOG::error fetching projects: ", apiResponse?.error);
       }
     });
   }, [get, session, setActiveProject]);
@@ -104,7 +104,7 @@ const SideBar: React.FC = () => {
           </div>
           <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">
             <SettingsIcon className="w-4 h-4 text-gray-500" />
-            Account Settings
+            System Settings
           </div>
           <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">
             <ShieldIcon className="w-4 h-4 text-gray-500" />

@@ -26,6 +26,9 @@
 - [x] Update backend API for project creation to allow mime types at project creation / settings update
 - [x] Implement API to fetch available mime types
 - [x] Implement front-end fetching of available mime types
-- [ ] Refactor API to use wrapped responses
-- [ ] Refactor API to return pagination information
-- [ ] Implement pagination on the front-end for files list
+- [x] Refactor API to use wrapped responses
+- [x] Refactor API to return pagination information
+- [x] Implement pagination on the front-end for files list
+- [ ] Implement Project deletion & file deletion
+- [ ] Implement File download on the front-end
+- [ ] Implement File deletion on the front-end

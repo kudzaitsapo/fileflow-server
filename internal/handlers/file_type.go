@@ -57,8 +57,7 @@ func HandleCreateMimeType(w http.ResponseWriter, r *http.Request) {
 		CreatedAt:   fileType.CreatedAt,
 	}
 
-	WriteJson(w, http.StatusCreated, response)
-
+	SendJsonWithoutMeta(w, http.StatusCreated, response)
 }
 
 func HandleGetAllFileTypes(w http.ResponseWriter, r *http.Request) {
@@ -74,6 +73,18 @@ func HandleGetAllFileTypes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response := make([]FileTypeResponse, 0, len(fileTypes))
+	fileTypeCount, countErr := appStorage.FileTypes.Count(r.Context())
+
+	if countErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("failed to count file types: %v", countErr))
+		return
+	}
+	meta := &JsonMeta{
+		TotalRecords: fileTypeCount,
+		Limit:        limit,
+		Offset:       offset,
+	}
+
 	for _, fileType := range fileTypes {
 		response = append(response, FileTypeResponse{
 			ID:          fileType.ID,
@@ -85,5 +96,5 @@ func HandleGetAllFileTypes(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	WriteJson(w, http.StatusOK, response)
+	SendJson(w, http.StatusOK, response, *meta)
 }

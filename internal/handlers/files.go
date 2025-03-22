@@ -100,7 +100,7 @@ func HandleFileUpload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// 4. Return the stored file to the client
-	WriteJson(w, http.StatusOK, storedFile)
+	SendJsonWithoutMeta(w, http.StatusOK, storedFile)
 }
 
 func HandleFileDownload(w http.ResponseWriter, r *http.Request) {
@@ -183,7 +183,19 @@ func HandleFilesList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	WriteJson(w, http.StatusOK, storedFiles)
+	totalFilesCount, countErr := appStore.StoredFiles.CountProjectFiles(r.Context(), intProjectId)
+	if countErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get files count: %v", countErr))
+		return
+	}
+
+	meta := &JsonMeta{
+		TotalRecords: totalFilesCount,
+		Limit:        limit,
+		Offset:       offset,
+	}
+
+	SendJson(w, http.StatusOK, storedFiles, *meta)
 }
 
 func HandleFileInfo(w http.ResponseWriter, r *http.Request) {
@@ -211,5 +223,5 @@ func HandleFileInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Return the file to the client
-	WriteJson(w, http.StatusOK, storedFile)
+	SendJsonWithoutMeta(w, http.StatusOK, storedFile)
 }

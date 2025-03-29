@@ -1,4 +1,6 @@
-# TODO LIST v1.0212344109103
+# TO DO Lists done here
+
+## TODO LIST v1.0212344109103
 
 - [x] Implement fetching all projects on API
 - [x] Implement fetching all files uploaded to a project on the backend
@@ -11,7 +13,7 @@
   - [x] Maximum / minimum file size allowed
 - [x] Implement file resource / mime type matching => Define mime types and file extensions
 - [ ] User Management - front-end template
-- [ ] Implement User management on the backend
+- [x] Implement User management on the backend
 - [x] Auth Login / Logout on front-end + backend (integrated)
 - [x] Front end - Initialise front end
 - [x] Project management - create project on the front end
@@ -32,3 +34,11 @@
 - [ ] Implement Project deletion & file deletion
 - [ ] Implement File download on the front-end
 - [ ] Implement File deletion on the front-end
+- [ ] Implement IP Address white listing / Firewall
+- [ ] Implement User project allocation
+
+## TODO LIST some other version
+
+- [ ] Refactor the front-end approach to use project assignments and project based viewing
+- [ ] Refactor backend API to accept project id in the headers to filter data
+- [ ] Implement project based file viewing & user management

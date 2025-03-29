@@ -12,13 +12,14 @@ services:
   #   depends_on:
   #     - server
   server:
-    build: .
+    build:
+      context: .
     container_name: ff-server
     restart: always
     ports:
       - "8090:8195"
     volumes:
-      - .:/app
+      - ./:/app
     env_file:
       - .env
     depends_on:

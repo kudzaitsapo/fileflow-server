@@ -66,6 +66,16 @@ func CreateRoutes() []Route {
 			RequiresAuth: true,
 		},
 		Route{
+			Pattern:      "GET /v1/projects/{id}/project-info",
+			Handler:      http.HandlerFunc(handlers.HandleGetProjectInfo),
+			RequiresAuth: true,
+		},
+		Route{
+			Pattern:      "GET /v1/projects/{id}/users",
+			Handler:      http.HandlerFunc(handlers.HandleGetProjectUsers),
+			RequiresAuth: true,
+		},
+		Route{
 			Pattern:      "POST /v1/files",
 			Handler:      http.HandlerFunc(handlers.HandleFileUpload),
 			RequiresAuth: false,
@@ -88,6 +98,26 @@ func CreateRoutes() []Route {
 		Route{
 			Pattern:      "POST /v1/file-types",
 			Handler:      http.HandlerFunc(handlers.HandleCreateMimeType),
+			RequiresAuth: true,
+		},
+		Route{
+			Pattern:      "GET /v1/users",
+			Handler:      http.HandlerFunc(handlers.HandleListUsersRequest),
+			RequiresAuth: true,
+		},
+		Route{
+			Pattern:      "POST /v1/users",
+			Handler:      http.HandlerFunc(handlers.HandleUserCreateRequest),
+			RequiresAuth: true,
+		},
+		Route{
+			Pattern:      "GET /v1/roles",
+			Handler:      http.HandlerFunc(handlers.HandleGetRolesRequest),
+			RequiresAuth: true,
+		},
+		Route{
+			Pattern:      "GET /v1/get-user-projects",
+			Handler:      http.HandlerFunc(handlers.HandleGetAssignedProjects),
 			RequiresAuth: true,
 		})
 
@@ -112,9 +142,6 @@ func CreateRoutes() []Route {
 		for m := range methods {
 			allowedMethods = append(allowedMethods, m)
 		}
-
-		// Add OPTIONS method to the allowed list if needed (not required by CORS spec)
-		// allowedMethods = append(allowedMethods, "OPTIONS")
 
 		// Sort for consistent output
 		sort.Strings(allowedMethods)

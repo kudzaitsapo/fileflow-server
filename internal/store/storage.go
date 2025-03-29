@@ -22,6 +22,7 @@ type Counter interface {
 type Storage struct {
 	Roles interface {
 		Counter
+		GetAll(ctx context.Context, limit int64, offset int64) ([]*Role, error)
 		GetByName(ctx context.Context, name string) (*Role, error)
 		Create(ctx context.Context, tx *sql.Tx, role *Role) error
 	}
@@ -66,6 +67,16 @@ type Storage struct {
 		GetByProjectId(ctx context.Context, projectId int64) ([]*ProjectAllowedFileType, error)
 		FileTypeIsAllowed(ctx context.Context, projectId int64, mimetype string) (bool, error)
 	}
+
+	UserAssignedProjects interface {
+		Create(ctx context.Context, tx *sql.Tx, userAssignedProject *UserAssignedProject) error
+		CreateWithoutTx(ctx context.Context, userAssignedProject *UserAssignedProject) error
+		GetByProjectId(ctx context.Context, projectId int64, limit int64, offset int64) ([]*UserAssignedProject, error)
+		GetByUserId(ctx context.Context, userId int64) ([]*UserAssignedProject, error)
+		CountByUserId(ctx context.Context, userId int64) (int64, error)
+		CountUsersByProjectId(ctx context.Context, projectId int64) (int64, error)
+		ProjectIsAssignedToUser(ctx context.Context, projectId int64, userId int64) (bool, error)
+	}
 }
 
 func InitialiseStorage(db *sql.DB) *Storage {
@@ -76,6 +87,7 @@ func InitialiseStorage(db *sql.DB) *Storage {
 		StoredFiles:             &StoredFileStore{db},
 		FileTypes:               &FileTypeStore{db},
 		ProjectAllowedFileTypes: &ProjectAllowedFileTypeStore{db},
+		UserAssignedProjects:    &UserProjectStore{db},
 	}
 }
 

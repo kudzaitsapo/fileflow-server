@@ -11,14 +11,18 @@ import {
 } from "@/components/icons";
 import TablePagination from "@/components/table/pagination";
 import { StoredFile } from "@/models/file";
+import { Project } from "@/models/project";
 import { useAxios } from "@/providers/axios";
 import { useActiveProject } from "@/providers/project";
 import { formatBytes, formatDateTime } from "@/utils/common";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Home() {
   const { activeProject } = useActiveProject();
+  const { data: session } = useSession();
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [files, setFiles] = useState<StoredFile[]>([]);
   const [total, setTotal] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -32,21 +36,29 @@ export default function Home() {
   useEffect(() => {
     async function getProjectFiles(projectId: number) {
       setIsLoading(true);
-      const response = await get<StoredFile[]>(`/projects/${projectId}/files`, {
-        limit: pageSize.toString(),
-        offset: offset.toString(),
-      });
-      if (response.success) {
-        setFiles(response.result);
-        setTotal(response.meta.total_records);
+      if (session) {
+        const response = await get<StoredFile[]>(
+          `/projects/${projectId}/files`,
+          {
+            limit: pageSize.toString(),
+            offset: offset.toString(),
+          }
+        );
+        if (response.success) {
+          setFiles(response.result);
+          setTotal(response.meta.total_records);
+        }
       }
       setIsLoading(false);
     }
 
     if (activeProject) {
       getProjectFiles(activeProject.id);
+      setSelectedProject(activeProject);
     }
-  }, [get, activeProject, pageSize, offset]);
+
+    console.log("LOG::page.tsx:activeProject: ", activeProject);
+  }, [get, pageSize, offset, session, activeProject]);
 
   const handleNavigation = () => {
     router.push("/projects/settings");
@@ -66,12 +78,12 @@ export default function Home() {
         <span className="text-gray-600 text-sm">Projects</span>
         <span className="text-gray-400">/</span>
         <span className="text-gray-800 text-sm font-medium">
-          {activeProject?.name}
+          {selectedProject?.name}
         </span>
       </div>
 
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">{activeProject?.name}</h1>
+        <h1 className="text-2xl font-semibold">{selectedProject?.name}</h1>
       </div>
 
       <div className="flex gap-3 mb-6">

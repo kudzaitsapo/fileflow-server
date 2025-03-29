@@ -1,11 +1,7 @@
 "use client";
-import { Project } from "@/models/project";
-import { useAxios } from "@/providers/axios";
-import React, { useEffect } from "react";
-import SidebarItem from "../sidebar-item";
-import { signOut, useSession } from "next-auth/react";
-import { useActiveProject } from "@/providers/project";
-import { useRouter } from "next/navigation";
+import React from "react";
+import { signOut } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   BarGraphIcon,
   ChatIcon,
@@ -18,44 +14,24 @@ import {
 } from "../icons";
 
 const SideBar: React.FC = () => {
-  const { get } = useAxios();
-  const { data: session } = useSession();
-  const [projects, setProjects] = React.useState<Project[]>([]);
-  const { activeProject, setActiveProject } = useActiveProject();
   const router = useRouter();
-  //const queryParams = useSearchParams();
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      if (session && session.user) {
-        const response = await get<Project[]>("/projects");
-        return response;
-      }
-    };
-
-    fetchProjects().then((apiResponse) => {
-      if (apiResponse?.success) {
-        setProjects(apiResponse.result);
-        setActiveProject(apiResponse.result[0]);
-      } else {
-        console.log("LOG::error fetching projects: ", apiResponse?.error);
-      }
-    });
-  }, [get, session, setActiveProject]);
+  const currentPageName = usePathname();
 
   const handleRedirect = (page: string) => {
     router.push(page);
   };
 
-  const handleProjectClick = (index: number) => {
-    const project = projects.find((p) => p.id === index);
-    if (!project) return;
-    setActiveProject(project);
-  };
-
   const logOut = async () => {
     await signOut();
   };
+
+  const activeClass = (page: string) =>
+    currentPageName === page
+      ? "bg-blue-500 text-white"
+      : "text-gray-600 hover:bg-gray-100";
+
+  const activeIcon = (page: string) =>
+    currentPageName === page ? "text-white" : "text-gray-500";
 
   return (
     <>
@@ -70,18 +46,31 @@ const SideBar: React.FC = () => {
 
         <div className="flex flex-col gap-2">
           <div className="text-xs font-semibold uppercase text-gray-500 px-2 mb-1">
-            Your Projects
+            Project Management
           </div>
           <div className="overflow-y-auto flex-1">
-            {projects &&
-              projects.map((project) => (
-                <SidebarItem
-                  name={project.name}
-                  onClick={() => handleProjectClick(project.id)}
-                  isActive={activeProject?.id == project.id}
-                  key={project.id}
-                />
-              ))}
+            <div
+              className={`flex items-center gap-3 p-2 rounded-md text-sm cursor-pointer ${activeClass(
+                "/"
+              )}`}
+              onClick={() => {
+                handleRedirect("/");
+              }}
+            >
+              <svg
+                className={`w-4 h-4 $${activeIcon("/")}`}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              Files
+            </div>
           </div>
         </div>
 
@@ -89,8 +78,15 @@ const SideBar: React.FC = () => {
           <div className="text-xs font-semibold uppercase text-gray-500 px-2 mb-1">
             Settings
           </div>
-          <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">
-            <UsersIcon className="w-4 h-4 text-gray-500" />
+          <div
+            className={`flex items-center gap-3 p-2 rounded-md text-sm cursor-pointer ${activeClass(
+              "/users"
+            )}`}
+            onClick={() => {
+              handleRedirect("/users");
+            }}
+          >
+            <UsersIcon className={`w-4 h-4 ${activeIcon("/users")}`} />
             Users
           </div>
           <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">

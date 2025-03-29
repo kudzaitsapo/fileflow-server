@@ -8,6 +8,7 @@ import {
 } from "@/models/project";
 import { useAxios } from "@/providers/axios";
 import { useActiveProject } from "@/providers/project";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import React, { useEffect, FormEvent, useState } from "react";
 
@@ -22,6 +23,7 @@ const ProjectCreationForm: React.FC = () => {
   });
 
   const { post } = useAxios();
+  const { data: session } = useSession();
 
   const [errors, setErrors] = useState<IFormValidationErrors>({});
   const [isLoading, setLoading] = useState<boolean>(false);
@@ -32,14 +34,18 @@ const ProjectCreationForm: React.FC = () => {
 
   useEffect(() => {
     async function fetchFileTypes() {
-      const fileTypes = await get<IFileType[]>("/file-types");
-      if (Array.isArray(fileTypes)) {
-        setMimeTypes(fileTypes);
+      if (session && session.user) {
+        const response = await get<IFileType[]>("/file-types");
+        if (response.success) {
+          setMimeTypes(response.result);
+        } else {
+          console.error("Error fetching file types");
+        }
       }
     }
 
     fetchFileTypes();
-  }, [get]);
+  }, [get, session]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (e: any) => {
@@ -88,10 +94,10 @@ const ProjectCreationForm: React.FC = () => {
         max_upload_size: parseInt(formData.maxFileSize.toString()),
       };
       try {
-        const result = await post<Project>("/projects", payload);
+        const response = await post<Project>("/projects", payload);
         setLoading(false);
         setSuccessMessage("Successfully created project");
-        setActiveProject(result);
+        setActiveProject(response.result);
       } catch (error) {
         console.error("LOG::error creating project: ", error);
         setLoading(false);

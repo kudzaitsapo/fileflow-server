@@ -45,28 +45,37 @@ const ProjectSettingsPage: React.FC = () => {
   useEffect(() => {
     async function fetchFileTypes() {
       if (session && session.user) {
-        const fileTypes = await get<IFileType[]>("/file-types");
-        if (Array.isArray(fileTypes)) {
-          setMimeTypes(fileTypes);
+        const response = await get<IFileType[]>("/file-types");
+        if (response.success) {
+          setMimeTypes(response.result);
+        } else {
+          console.error("Failed to fetch file types");
+        }
+      }
+    }
+
+    async function fetchProjectDetails() {
+      if (activeProject && session && session.user) {
+        const response = await get<Project>(
+          `/projects/${activeProject.id}/project-info`
+        );
+        if (response.success) {
+          setFormData({
+            projectName: response.result.name,
+            description: response.result.description,
+            maxFileSize: response.result.max_upload_size,
+            allowedFiles: response.result.allowed_file_types,
+          });
+          setProjectKey(response.result.project_key);
+        } else {
+          console.error("Failed to fetch project details");
         }
       }
     }
 
     fetchFileTypes();
-  }, [get, session]);
-
-  useEffect(() => {
-    if (activeProject) {
-      setFormData({
-        projectName: activeProject.name,
-        description: activeProject.description,
-        maxFileSize: activeProject.max_upload_size,
-        allowedFiles: ["image/jpeg", "image/png", "application/pdf"],
-      });
-
-      setProjectKey(activeProject.project_key);
-    }
-  }, [activeProject]);
+    fetchProjectDetails();
+  }, [activeProject, get, session]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -138,7 +147,7 @@ const ProjectSettingsPage: React.FC = () => {
           message: "Project settings updated successfully",
           showResult: true,
         });
-        setActiveProject(response);
+        setActiveProject(response.result);
       } catch (e) {
         console.log("Error: ", e);
         setIsLoading(false);
@@ -168,14 +177,17 @@ const ProjectSettingsPage: React.FC = () => {
         id: activeProject?.id,
       };
 
-      const result = await post<Project>("/projects/re-generate-key", payload);
+      const response = await post<Project>(
+        "/projects/re-generate-key",
+        payload
+      );
       setFormResult({
         success: true,
         message: "API key regenerated successfully",
         showResult: true,
       });
 
-      setProjectKey(result.project_key);
+      setProjectKey(response.result.project_key);
       setRegeneratingKey(false);
     } catch (e) {
       console.log("Error: ", e);

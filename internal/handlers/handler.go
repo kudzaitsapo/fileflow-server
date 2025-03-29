@@ -70,3 +70,37 @@ func GetPaginationParams(r *http.Request) (int64, int64) {
 
 	return limit, offset
 }
+
+func GetCurrentProject(r *http.Request) (*store.Project, error) {
+	// Get the request header auth token
+	projectId := r.Header.Get("ff-project-id")
+	if projectId == "" {
+		return nil, errors.New("project id required to access")
+	}
+
+	projectIdAsInt, err := strconv.ParseInt(projectId, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get the project from the store
+	currentApp := app.GetCurrentApplication()
+	appStore := currentApp.Store
+
+	currentUser, userGetErr := GetCurrentUser(r)
+	if userGetErr != nil {
+		return nil, userGetErr
+	}
+
+	_, assignmentCheckErr := appStore.UserAssignedProjects.ProjectIsAssignedToUser(r.Context(), projectIdAsInt, currentUser.ID)
+	if assignmentCheckErr != nil {
+		return nil, assignmentCheckErr
+	}
+
+	project, projectGetErr := appStore.Projects.GetById(r.Context(), projectIdAsInt)
+	if projectGetErr != nil {
+		return nil, projectGetErr
+	}
+
+	return project, nil
+}

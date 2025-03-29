@@ -1,0 +1,1 @@
+export const ACTIVE_PROJECT_LOCAL_STORAGE_KEY = "4kL9zXT7";

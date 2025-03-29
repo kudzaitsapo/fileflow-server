@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/kudzaitsapo/fileflow-server/cmd/app"
@@ -32,6 +33,12 @@ type ProjectResponse struct {
 
 type ApiKeyRegenerationRequest struct {
 	ID int64 `json:"id"`
+}
+
+type ProjectUser struct {
+	ID        int64 `json:"id"`
+	ProjectID int64 `json:"project_id"`
+	UserInfo  any   `json:"user_info"`
 }
 
 func GenerateRandomKey() (string, error) {
@@ -98,6 +105,20 @@ func HandleProjectCreation(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+	}
+
+	// Assign current user to the project
+	projectUser := &store.UserAssignedProject{
+		UserID:    currentUser.ID,
+		ProjectID: project.ID,
+	}
+
+	// create the user assigned project with transaction
+	assignErr := appStorage.UserAssignedProjects.CreateWithoutTx(r.Context(), projectUser)
+
+	if assignErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to assign created project to logged in user: %v", assignErr))
+		return
 	}
 
 	response := &ProjectResponse{
@@ -279,4 +300,104 @@ func HandleProjectDeletion(w http.ResponseWriter, r *http.Request) {
 	}
 
 	SendJsonWithoutMeta(w, http.StatusNoContent, nil)
+}
+
+func HandleGetProjectInfo(w http.ResponseWriter, r *http.Request) {
+	currentApp := app.GetCurrentApplication()
+	appStorage := currentApp.Store
+
+	projectId := r.PathValue("id")
+	intProjectId, convErr := strconv.ParseInt(projectId, 10, 64)
+	if convErr != nil {
+		WriteJsonError(w, http.StatusBadRequest, "Invalid project ID")
+		return
+	}
+
+	project, projectErr := appStorage.Projects.GetById(r.Context(), intProjectId)
+	if projectErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get project: %v", projectErr))
+		return
+	}
+
+	fileTypes := make([]string, 0)
+
+	allowedFileTypes, fileTypeErr := appStorage.ProjectAllowedFileTypes.GetByProjectId(r.Context(), project.ID)
+	if fileTypeErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get allowed file types: %v", fileTypeErr))
+		return
+	}
+	for _, fileType := range allowedFileTypes {
+		dbSavedType, typeGetErr := appStorage.FileTypes.GetById(r.Context(), fileType.FileTypeID)
+		if typeGetErr != nil {
+			WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get file type: %v", typeGetErr))
+			return
+		}
+		fileTypes = append(fileTypes, dbSavedType.MimeType)
+	}
+
+	response := &ProjectResponse{
+		ID:               project.ID,
+		Name:             project.Name,
+		Description:      project.Description,
+		CreatedAt:        project.CreatedAt,
+		CreatedById:      project.CreatedById,
+		ProjectKey:       project.ProjectKey,
+		MaxUploadSize:    project.MaxUploadSize,
+		AllowedFileTypes: fileTypes,
+	}
+
+	SendJsonWithoutMeta(w, http.StatusOK, response)
+}
+
+func HandleGetProjectUsers(w http.ResponseWriter, r *http.Request) {
+	currentApp := app.GetCurrentApplication()
+	appStorage := currentApp.Store
+
+	projectId := r.PathValue("id")
+	intProjectId, convErr := strconv.ParseInt(projectId, 10, 64)
+	if convErr != nil {
+		WriteJsonError(w, http.StatusBadRequest, "Invalid project ID")
+		return
+	}
+
+	limit, offset := GetPaginationParams(r)
+
+	projectUsers, projectUserErr := appStorage.UserAssignedProjects.GetByProjectId(r.Context(), intProjectId, limit, offset)
+	if projectUserErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get project users: %v", projectUserErr))
+		return
+	}
+
+	response := make([]*ProjectUser, 0)
+	for _, projectUser := range projectUsers {
+		projUserInfo := &ProjectUser{
+			ID:        projectUser.ID,
+			ProjectID: projectUser.ProjectID,
+			UserInfo: UserResponse{
+				ID:        projectUser.User.ID,
+				FirstName: projectUser.User.FirstName,
+				LastName:  projectUser.User.LastName,
+				Email:     projectUser.User.Email,
+				CreatedAt: projectUser.User.CreatedAt,
+				IsActive:  projectUser.User.IsActive,
+				RoleID:    projectUser.User.RoleID,
+			},
+		}
+
+		response = append(response, projUserInfo)
+	}
+
+	usersCount, countErr := appStorage.UserAssignedProjects.CountUsersByProjectId(r.Context(), intProjectId)
+	if countErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("Failed to get project users count: %v", countErr))
+		return
+	}
+
+	meta := &JsonMeta{
+		TotalRecords: usersCount,
+		Limit:        limit,
+		Offset:       offset,
+	}
+
+	SendJson(w, http.StatusOK, response, meta)
 }

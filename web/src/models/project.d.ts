@@ -1,3 +1,5 @@
+import { User } from "./user";
+
 export interface Project {
   id: number;
   name: string;
@@ -18,4 +20,10 @@ export interface IProjectFormProps {
 export interface IFormValidationErrors {
   projectName?: string;
   maxFileSize?: string;
+}
+
+export interface ProjectUser {
+  id: number;
+  project_id: number;
+  user_info: User;
 }

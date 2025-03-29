@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/kudzaitsapo/fileflow-server/internal/handlers"
 	"github.com/kudzaitsapo/fileflow-server/internal/store"
 )
 
@@ -43,10 +43,11 @@ func generateAdminUser() (*store.User, error) {
 }
 
 func generateDefaultProject() *store.Project {
+	key, _ := handlers.GenerateRandomKey()
 	return &store.Project{
 		Name:        "Default Project",
 		Description: "Default project for the organisation",
-		ProjectKey:  uuid.NewString(),
+		ProjectKey:  key,
 		CreatedAt:   time.Now().Format(time.RFC3339),
 	}
 }
@@ -170,14 +171,14 @@ func generateAllowedFileType(projectId int64, fileTypeId int64) *store.ProjectAl
 	}
 }
 
-func Seed(store *store.Storage, db *sql.DB) error {
+func Seed(storage *store.Storage, db *sql.DB) error {
 	log.Println("[+] Seeding database ...")
 
 	ctx := context.Background()
 
 	tx, _ := db.BeginTx(ctx, nil)
 
-	roleCount, countErr := store.Roles.Count(ctx)
+	roleCount, countErr := storage.Roles.Count(ctx)
 
 	if countErr != nil {
 		log.Printf("[-] Failed to count roles! An error occurred: %v", countErr)
@@ -186,17 +187,20 @@ func Seed(store *store.Storage, db *sql.DB) error {
 			log.Println("[+] Seeding roles ...")
 			roles := generateRoles()
 			for _, role := range roles {
-				if err := store.Roles.Create(ctx, tx, role); err != nil {
+				if err := storage.Roles.Create(ctx, tx, role); err != nil {
 					_ = tx.Rollback()
 					log.Printf("[-] error seeding role: %v", err)
 					return err
 				}
 			}
 			log.Println("[+] Roles seeded successfully")
+		} else {
+			log.Println("[!] Skip seeding roles since there's live data")
 		}
 	}
 
-	userCount, userCountErr := store.Users.Count(ctx)
+	userCount, userCountErr := storage.Users.Count(ctx)
+	adminUserId := int64(0)
 
 	if userCountErr != nil {
 		log.Printf("[-] Failed to count users! An error occurred: %v", userCountErr)
@@ -209,17 +213,20 @@ func Seed(store *store.Storage, db *sql.DB) error {
 				return err
 			}
 
-			if err := store.Users.Create(ctx, tx, adminUser); err != nil {
+			if err := storage.Users.Create(ctx, tx, adminUser); err != nil {
 				_ = tx.Rollback()
 				log.Printf("[-] error seeding admin user: %v", err)
 				return err
 			} else {
+				adminUserId = adminUser.ID
 				log.Println("[+] Admin user seeded successfully")
 			}
+		} else {
+			log.Println("[!] Skip seeding admin user since there's live data")
 		}
 	}
 
-	projectCount, projectCountErr := store.Projects.Count(ctx)
+	projectCount, projectCountErr := storage.Projects.Count(ctx)
 	var defaultProjectId int64
 
 	if projectCountErr != nil {
@@ -228,17 +235,19 @@ func Seed(store *store.Storage, db *sql.DB) error {
 		if projectCount == 0 {
 			log.Println("[+] Seeding default project ...")
 			defaultProject := generateDefaultProject()
-			if err := store.Projects.Create(ctx, defaultProject); err != nil {
+			if err := storage.Projects.Create(ctx, defaultProject); err != nil {
 				_ = tx.Rollback()
 				log.Printf("[-] error seeding default project: %v", err)
 				return err
 			}
 			defaultProjectId = defaultProject.ID
 			log.Println("[+] Default project seeded successfully")
+		} else {
+			log.Println("[!] Skip seeding default project since there's live data")
 		}
 	}
 
-	fileTypesCount, fileTypesCountErr := store.FileTypes.Count(ctx)
+	fileTypesCount, fileTypesCountErr := storage.FileTypes.Count(ctx)
 	if fileTypesCountErr != nil {
 		log.Printf("[-] Failed to count file types! An error occurred: %v", fileTypesCountErr)
 	} else {
@@ -247,7 +256,7 @@ func Seed(store *store.Storage, db *sql.DB) error {
 			fileTypesToSeed := generateFileTypes()
 
 			for _, fileType := range fileTypesToSeed {
-				if ftSeedErr := store.FileTypes.Create(ctx, fileType); ftSeedErr != nil {
+				if ftSeedErr := storage.FileTypes.Create(ctx, fileType); ftSeedErr != nil {
 					_ = tx.Rollback()
 					log.Printf("[-] error seeding file type: %v", ftSeedErr)
 					return ftSeedErr
@@ -256,7 +265,7 @@ func Seed(store *store.Storage, db *sql.DB) error {
 				if defaultProjectId != 0 {
 					log.Printf("[+] Seeding allowed file type for default project ...")
 					defaultProjectAllowedType := generateAllowedFileType(defaultProjectId, fileType.ID)
-					if patCreateErr := store.ProjectAllowedFileTypes.Create(ctx, defaultProjectAllowedType); patCreateErr != nil {
+					if patCreateErr := storage.ProjectAllowedFileTypes.Create(ctx, defaultProjectAllowedType); patCreateErr != nil {
 						_ = tx.Rollback()
 						log.Printf("[-] error seeding project allowed file type: %v", patCreateErr)
 						return patCreateErr
@@ -264,6 +273,29 @@ func Seed(store *store.Storage, db *sql.DB) error {
 				}
 			}
 			log.Println("[+] File types seeded successfully")
+		} else {
+			log.Println("[!] Skip seeding file types since there's live data")
+		}
+	}
+
+	assignmentsCount, assignCountErr := storage.UserAssignedProjects.CountByUserId(ctx, adminUserId)
+	if assignCountErr != nil {
+		log.Printf("[-] Failed to count user assignments! An error occurred: %v", assignCountErr)
+	} else if assignmentsCount == 0 {
+		if (adminUserId != 0) && (defaultProjectId != 0) {
+			log.Printf("[+] Assigning default project to admin user with Id: %d", adminUserId)
+			adminUserProject := &store.UserAssignedProject{
+				ProjectID: defaultProjectId,
+				UserID:    adminUserId,
+			}
+
+			if assignmentErr := storage.UserAssignedProjects.Create(ctx, tx, adminUserProject); assignmentErr != nil {
+				_ = tx.Rollback()
+				log.Printf("[-] error assigning default project to admin user: %v", assignmentErr)
+				return assignmentErr
+			}
+			log.Println("[+] Default project assigned to admin user successfully")
+
 		}
 	}
 

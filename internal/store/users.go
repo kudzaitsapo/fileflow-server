@@ -94,7 +94,7 @@ func (s *UserStore) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 }
 
 func (s *UserStore) GetById(ctx context.Context, id int64) (*User, error) {
-	query := `SELECT id, email, first_name, last_name, created_at, is_active, role_id FROM users WHERE id = $1`
+	query := `SELECT u.id, u.email, u.first_name, u.last_name, u.created_at, u.is_active, u.role_id, r.id, r.name, r.description, r.level FROM users u INNER JOIN roles r on u.role_id = r.id WHERE u.id = $1`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -112,6 +112,10 @@ func (s *UserStore) GetById(ctx context.Context, id int64) (*User, error) {
 		&user.CreatedAt,
 		&user.IsActive,
 		&user.RoleID,
+		&user.Role.ID,
+		&user.Role.Name,
+		&user.Role.Description,
+		&user.Role.Level,
 	)
 
 	if err != nil {
@@ -127,7 +131,7 @@ func (s *UserStore) GetById(ctx context.Context, id int64) (*User, error) {
 }
 
 func (s *UserStore) GetAll(ctx context.Context, limit int64, offset int64) ([]*User, error) {
-	query := `SELECT id, email, first_name, last_name, created_at, is_active, role_id FROM users LIMIT $1 OFFSET $2`
+	query := `SELECT u.id, u.email, u.first_name, u.last_name, u.created_at, u.is_active, u.role_id, r.id, r.name, r.description FROM users u INNER JOIN roles r on u.role_id = r.id LIMIT $1 OFFSET $2`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()
@@ -149,6 +153,9 @@ func (s *UserStore) GetAll(ctx context.Context, limit int64, offset int64) ([]*U
 			&user.CreatedAt,
 			&user.IsActive,
 			&user.RoleID,
+			&user.Role.ID,
+			&user.Role.Name,
+			&user.Role.Description,
 		)
 
 		if err != nil {

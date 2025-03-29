@@ -55,3 +55,31 @@ func (s *RoleStore) Create(ctx context.Context, tx *sql.Tx, role *Role) error {
 
 	return nil
 }
+
+func (s *RoleStore) GetAll(ctx context.Context, limit int64, offset int64) ([]*Role, error) {
+	query := `SELECT id, name, description, level FROM roles ORDER BY id LIMIT $1 OFFSET $2`
+
+	rows, err := s.db.QueryContext(ctx, query, limit, offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	roles := make([]*Role, 0)
+
+	for rows.Next() {
+		role := &Role{}
+
+		err := rows.Scan(&role.ID, &role.Name, &role.Description, &role.Level)
+
+		if err != nil {
+			return nil, err
+		}
+
+		roles = append(roles, role)
+	}
+
+	return roles, nil
+}

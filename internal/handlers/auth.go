@@ -88,3 +88,35 @@ func HandleAuthentication(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }
+
+func HandleGetAssignedProjects(w http.ResponseWriter, r *http.Request) {
+	currentApp := app.GetCurrentApplication()
+	store := currentApp.Store
+
+	user, err := GetCurrentUser(r)
+	if err != nil {
+		WriteJsonError(w, http.StatusUnauthorized, fmt.Sprintf("error getting current user: %v", err))
+		return
+	}
+
+	projects, projErr := store.UserAssignedProjects.GetByUserId(r.Context(), user.ID)
+	if projErr != nil {
+		WriteJsonError(w, http.StatusInternalServerError, fmt.Sprintf("error getting projects: %v", projErr))
+		return
+	}
+
+	projectsData := make([]ProjectResponse, 0)
+
+	for _, assignment := range projects {
+
+		projectsData = append(projectsData, ProjectResponse{
+			ID:            assignment.Project.ID,
+			Name:          assignment.Project.Name,
+			Description:   assignment.Project.Description,
+			CreatedAt:     assignment.Project.CreatedAt,
+			MaxUploadSize: assignment.Project.MaxUploadSize,
+		})
+	}
+
+	SendJsonWithoutMeta(w, http.StatusOK, projectsData)
+}

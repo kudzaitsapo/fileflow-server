@@ -169,7 +169,7 @@ func (s *StoredFileStore) GetAllByProjectKey(ctx context.Context,
 
 func (s *StoredFileStore) GetAllByProjectId(ctx context.Context, projectId int64, limit int64, offset int64) ([]*StoredFile, error) {
 	query := `SELECT sf.id, sf.file_name, sf.file_size, sf.mime_type, sf.folder, sf.saved_as, sf.original_extension, sf.uploaded_at, sf.project_id, 
-	sf.icon, ft.name, ft.id, ft.mimetype FROM stored_files sf INNER JOIN file_types ft on sf.mime_type = ft.mimetype WHERE sf.project_id = $1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3`
+	sf.icon, ft.name, ft.id, ft.mimetype FROM stored_files sf LEFT JOIN file_types ft on sf.mime_type = ft.mimetype WHERE sf.project_id = $1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3`
 
 	ctx, cancel := context.WithTimeout(ctx, QueryTimeoutDuration)
 	defer cancel()

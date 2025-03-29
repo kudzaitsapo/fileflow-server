@@ -37,7 +37,7 @@ func CORS(next http.Handler) http.Handler {
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		
+
 		authHeader := r.Header.Get("Authorization")
 
 		if authHeader == "" {
@@ -70,7 +70,12 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-
+// TODO: Add error handling middleware here
+func ErrorHandlingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+	})
+}
 
 func GetMiddlewares() []func(http.Handler) http.Handler {
 	return []func(http.Handler) http.Handler{

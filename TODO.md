@@ -12,7 +12,7 @@
   - [x] Allowed file types / file validation
   - [x] Maximum / minimum file size allowed
 - [x] Implement file resource / mime type matching => Define mime types and file extensions
-- [ ] User Management - front-end template
+- [x] User Management - front-end template
 - [x] Implement User management on the backend
 - [x] Auth Login / Logout on front-end + backend (integrated)
 - [x] Front end - Initialise front end
@@ -31,14 +31,30 @@
 - [x] Refactor API to use wrapped responses
 - [x] Refactor API to return pagination information
 - [x] Implement pagination on the front-end for files list
-- [ ] Implement Project deletion & file deletion
-- [ ] Implement File download on the front-end
-- [ ] Implement File deletion on the front-end
-- [ ] Implement IP Address white listing / Firewall
-- [ ] Implement User project allocation
 
 ## TODO LIST some other version
 
 - [ ] Refactor the front-end approach to use project assignments and project based viewing
 - [ ] Refactor backend API to accept project id in the headers to filter data
-- [ ] Implement project based file viewing & user management
+- [x] Implement project based file viewing & user management
+- [ ] Implement Project deletion & file deletion
+- [ ] Implement File download on the front-end
+- [ ] Implement File deletion on the front-end
+- [ ] Implement IP Address white listing / Firewall
+- [ ] Implement User project allocation on the backend on creation
+- [ ] Implement User creation on backend
+- [ ] Implement User creation on front-end
+- [ ] Refactor project settings to use tabs, and split security details into a new tab
+- [ ] Implement redis caching (figure out what to cache)
+- [ ] Implement email notifications on the backend
+- [ ] Implement email settings on the front-end
+- [ ] Find a way to implement working hot reload for the backend
+- [ ] Implement system notifications on the backend
+- [ ] Implement system notifications on the front-end
+- [ ] Refactor authorization to send JSON instead of a string message
+- [ ] Re-design side bar for project settings
+- [ ] Implement user permissions and roles
+- [ ] Implement audit logs for access (login, file uploads, CRUD operations etc)
+- [ ] Implement file versioning ? (Not sure if this is necessary to be honest)
+- [ ] Implement usage & analytics reporting template on the front-end
+- [ ] Implement user profile editing, adding of avatars, etc

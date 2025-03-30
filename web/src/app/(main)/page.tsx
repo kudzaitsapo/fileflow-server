@@ -3,7 +3,6 @@
 import {
   ListIcon,
   SearchIcon,
-  SettingsIcon,
   SVGDisplay,
   TrashIcon,
   UploadIcon,
@@ -16,7 +15,6 @@ import { useAxios } from "@/providers/axios";
 import { useActiveProject } from "@/providers/project";
 import { formatBytes, formatDateTime } from "@/utils/common";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function Home() {
@@ -29,7 +27,6 @@ export default function Home() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { get } = useAxios();
-  const router = useRouter();
 
   const offset = (currentPage - 1) * pageSize;
 
@@ -56,13 +53,7 @@ export default function Home() {
       getProjectFiles(activeProject.id);
       setSelectedProject(activeProject);
     }
-
-    console.log("LOG::page.tsx:activeProject: ", activeProject);
   }, [get, pageSize, offset, session, activeProject]);
-
-  const handleNavigation = () => {
-    router.push("/projects/settings");
-  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -104,14 +95,6 @@ export default function Home() {
         <button className="flex items-center gap-2 py-2 px-3 rounded-md bg-blue-600 text-white border-none font-medium text-sm cursor-pointer hover:bg-blue-800">
           <UploadIcon className="w-4 h-4" />
           Upload Files
-        </button>
-
-        <button
-          className="flex items-center gap-2 py-2 px-3 rounded-md bg-white border border-gray-300 text-gray-700 font-medium text-sm cursor-pointer hover:bg-gray-50"
-          onClick={() => handleNavigation()}
-        >
-          <SettingsIcon className="w-4 h-4" />
-          Project Settings
         </button>
       </div>
 

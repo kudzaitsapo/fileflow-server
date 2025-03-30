@@ -1,15 +1,12 @@
 "use client";
 import React from "react";
-import { signOut } from "next-auth/react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BarGraphIcon,
   ChatIcon,
-  ExclamationCircleIcon,
   PlusIcon,
   SettingsIcon,
   ShieldIcon,
-  SignOutIcon,
   UsersIcon,
 } from "../icons";
 
@@ -19,10 +16,6 @@ const SideBar: React.FC = () => {
 
   const handleRedirect = (page: string) => {
     router.push(page);
-  };
-
-  const logOut = async () => {
-    await signOut();
   };
 
   const activeClass = (page: string) =>
@@ -89,8 +82,13 @@ const SideBar: React.FC = () => {
             <UsersIcon className={`w-4 h-4 ${activeIcon("/users")}`} />
             Users
           </div>
-          <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">
-            <ChatIcon className="w-4 h-4 text-gray-500" />
+          <div
+            className={`flex items-center gap-3 p-2 rounded-md text-sm cursor-pointer ${activeClass(
+              "/activity"
+            )}`}
+            onClick={() => handleRedirect("/activity")}
+          >
+            <ChatIcon className={`w-4 h-4 ${activeIcon("/activity")}`} />
             Activity Log
           </div>
 
@@ -98,30 +96,23 @@ const SideBar: React.FC = () => {
             <BarGraphIcon className="w-4 h-4 text-gray-500" />
             Usage & Analytics
           </div>
-          <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">
-            <SettingsIcon className="w-4 h-4 text-gray-500" />
-            System Settings
-          </div>
-          <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">
-            <ShieldIcon className="w-4 h-4 text-gray-500" />
-            Security
-          </div>
-          <div className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100">
-            <ExclamationCircleIcon className="w-4 h-4 text-gray-500" />
-            Help & Support
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="text-xs font-semibold uppercase text-gray-500 px-2 mb-1">
-            Other
+          <div
+            className={`flex items-center gap-3 p-2 rounded-md text-sm cursor-pointer ${activeClass(
+              "/settings"
+            )}`}
+            onClick={() => handleRedirect("/settings")}
+          >
+            <SettingsIcon className={`w-4 h-4 ${activeIcon("/settings")}`} />
+            Project Settings
           </div>
           <div
-            className="flex items-center gap-3 p-2 rounded-md text-gray-600 text-sm cursor-pointer hover:bg-gray-100"
-            onClick={logOut}
+            className={`flex items-center gap-3 p-2 rounded-md text-sm cursor-pointer ${activeClass(
+              "/security"
+            )}`}
+            onClick={() => handleRedirect("/security")}
           >
-            <SignOutIcon className="w-4 h-4 text-gray-500" />
-            Sign Out
+            <ShieldIcon className={`w-4 h-4 ${activeIcon("/security")}`} />
+            Security
           </div>
         </div>
       </div>

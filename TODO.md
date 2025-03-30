@@ -20,7 +20,6 @@
 - [x] Fix seeding of items so that if something exists, it's not seeded instead of breaking the backend initialisation
 - [x] Update project creation API to accept file size limits
 - [x] Update file upload API to validate settings from project
-- [ ] Vault ? To think about
 - [x] Seed mime types
 - [x] Update project settings - backend
 - [x] Update project settings - front-end
@@ -40,7 +39,7 @@
 - [ ] Implement Project deletion & file deletion
 - [ ] Implement File download on the front-end
 - [ ] Implement File deletion on the front-end
-- [ ] Implement IP Address white listing / Firewall
+- [ ] Implement Security template (IP Address white listing / Firewall) on the front-end
 - [ ] Implement User project allocation on the backend on creation
 - [ ] Implement User creation on backend
 - [ ] Implement User creation on front-end
@@ -51,10 +50,11 @@
 - [ ] Find a way to implement working hot reload for the backend
 - [ ] Implement system notifications on the backend
 - [ ] Implement system notifications on the front-end
-- [ ] Refactor authorization to send JSON instead of a string message
-- [ ] Re-design side bar for project settings
+- [x] Refactor authorization to send JSON instead of a string message
+- [x] Re-design side bar for project settings
 - [ ] Implement user permissions and roles
 - [ ] Implement audit logs for access (login, file uploads, CRUD operations etc)
 - [ ] Implement file versioning ? (Not sure if this is necessary to be honest)
 - [ ] Implement usage & analytics reporting template on the front-end
 - [ ] Implement user profile editing, adding of avatars, etc
+- [ ] Vault ? To think about

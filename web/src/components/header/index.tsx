@@ -1,14 +1,16 @@
 "use client";
 import React, { useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useAxios } from "@/providers/axios";
 import { Project } from "@/models/project";
 import { useActiveProject } from "@/providers/project";
+import { SignOutIcon } from "../icons";
 
 const Header: React.FC = () => {
   const { data: session } = useSession();
   const { get } = useAxios();
   const [projects, setProjects] = React.useState<Project[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = React.useState<boolean>(false);
   const { activeProject, setActiveProject } = useActiveProject();
 
   useEffect(() => {
@@ -28,6 +30,10 @@ const Header: React.FC = () => {
       fetchProjects();
     }
   }, [activeProject, get, session, setActiveProject]);
+
+  const logOut = async () => {
+    await signOut();
+  };
 
   return (
     <>
@@ -83,10 +89,9 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Right section with user info and optional actions */}
+        {/* Right section with notifications, user info and dropdown menu */}
         <div className="flex items-center gap-5">
-          {/* Optional quick actions - uncomment if needed */}
-
+          {/* Notifications */}
           <button className="text-gray-600 hover:text-blue-600 focus:outline-none">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -112,6 +117,82 @@ const Header: React.FC = () => {
             </span>
             <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-semibold shadow-sm border border-blue-200">
               {(session && session.user && session.user.name[0]) ?? `FF`}
+            </div>
+
+            {/* Dropdown menu */}
+            <div className="relative">
+              <button
+                className="text-gray-600 hover:text-blue-600 focus:outline-none mt-3"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+
+              {/* Dropdown content */}
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-20 border border-gray-200">
+                  <a
+                    href="#"
+                    className="px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 flex items-center"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-2 text-gray-500"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    My Profile
+                  </a>
+                  <a
+                    href="#"
+                    className="px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 flex items-center"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mr-2 text-gray-500"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    System Settings
+                  </a>
+                  <div className="border-t border-gray-100 my-1"></div>
+                  <a
+                    href="#"
+                    className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                    onClick={logOut}
+                  >
+                    <SignOutIcon className="h-4 w-4 mr-2 text-red-500" />
+                    Sign Out
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>

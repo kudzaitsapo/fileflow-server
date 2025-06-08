@@ -39,9 +39,9 @@
 - [ ] Implement Project deletion & file deletion
 - [ ] Implement File download on the front-end
 - [ ] Implement File deletion on the front-end
-- [ ] Implement Security template (IP Address white listing / Firewall) on the front-end
+- [x] Implement Security template (IP Address white listing / Firewall) on the front-end
 - [ ] Implement User project allocation on the backend on creation
-- [ ] Implement User creation on backend
+- [x] Implement User creation on backend
 - [ ] Implement User creation on front-end
 - [ ] Refactor project settings to use tabs, and split security details into a new tab
 - [ ] Implement redis caching (figure out what to cache)
